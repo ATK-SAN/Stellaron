@@ -14,6 +14,7 @@ import VerdictBadge from './VerdictBadge'
 import SlipCalendarGrid from './SlipCalendarGrid'
 import DecisionGatesTimeline from './DecisionGatesTimeline'
 import ChoreographyPlayer from './ChoreographyPlayer'
+import CompareView from './CompareView'
 
 // ─── Site display names ───────────────────────────────────────────────────────
 const SITE_NAMES = {
@@ -455,6 +456,7 @@ export default function MissionRehearsal() {
   const tabs = [
     { id: 'form', label: '📋 Mission Input' },
     { id: 'results', label: '📊 Results', disabled: !result },
+    { id: 'compare', label: '⚖ Scenario Compare' },
     { id: 'playback', label: '🚀 3D Flight Playback' },
   ]
 
@@ -835,6 +837,13 @@ export default function MissionRehearsal() {
               )}
             </>
           )}
+        </div>
+      )}
+
+      {/* ─── COMPARE TAB ─── */}
+      {tab === 'compare' && (
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
+          <CompareView comparisonData={result?.comparison} />
         </div>
       )}
 
