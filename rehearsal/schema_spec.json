@@ -1,0 +1,167 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "properties": {
+    "centre": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "constraints": {
+      "additionalProperties": false,
+      "properties": {
+        "max_earth_blackout_h": {
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "min_sunlit_fraction": {
+          "maximum": 1.0,
+          "minimum": 0,
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "delay_scenarios": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "days": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "outage_hours": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "outage_start_utc": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "power_factor": {
+            "maximum": 1.0,
+            "minimum": 0,
+            "type": "number"
+          },
+          "probability": {
+            "maximum": 1.0,
+            "minimum": 0,
+            "type": "number"
+          },
+          "type": {
+            "enum": [
+              "comms_outage",
+              "landing_retry",
+              "launch_slip",
+              "orbit_hold_extension",
+              "reduced_power",
+              "transit_extension"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "type": "object"
+      },
+      "maxItems": 8,
+      "type": "array"
+    },
+    "hardware": {
+      "additionalProperties": false,
+      "properties": {
+        "base_load_w": {
+          "default": 65.0,
+          "minimum": 0,
+          "type": "number"
+        },
+        "battery_wh": {
+          "default": 1200.0,
+          "exclusiveMinimum": 0,
+          "type": "number"
+        },
+        "min_soc_fraction": {
+          "default": 0.2,
+          "maximum": 1.0,
+          "minimum": 0,
+          "type": "number"
+        },
+        "panel_efficiency": {
+          "default": 0.28,
+          "exclusiveMinimum": 0,
+          "maximum": 1.0,
+          "type": "number"
+        },
+        "panel_m2": {
+          "default": 2.5,
+          "exclusiveMinimum": 0,
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "landing_site_id": {
+      "enum": [
+        "shackleton_connecting_ridge",
+        "shackleton_peak",
+        "de_gerlache_rim_1",
+        "de_gerlache_rim_2",
+        "connecting_ridge_ext",
+        "malapert_mountain",
+        "haworth_rim",
+        "nobile_rim_1",
+        "amundsen_rim",
+        "faustini_rim_a",
+        "apollo_11",
+        "apollo_12",
+        "apollo_17",
+        "change_4"
+      ],
+      "type": "string"
+    },
+    "launch_utc": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "mission": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "orbit_hold_days": {
+      "default": 0,
+      "maximum": 30,
+      "minimum": 0,
+      "type": "number"
+    },
+    "schema_version": {
+      "enum": [
+        1
+      ],
+      "type": "integer"
+    },
+    "surface_days": {
+      "maximum": 30,
+      "minimum": 1,
+      "type": "number"
+    },
+    "transit_days": {
+      "maximum": 40,
+      "minimum": 1,
+      "type": "number"
+    }
+  },
+  "required": [
+    "schema_version",
+    "centre",
+    "mission",
+    "launch_utc",
+    "transit_days",
+    "landing_site_id",
+    "surface_days"
+  ],
+  "title": "STELLARON_Mission_Plan",
+  "type": "object"
+}
