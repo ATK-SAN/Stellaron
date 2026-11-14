@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+﻿import { useMemo } from 'react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ReferenceLine, ResponsiveContainer, ReferenceArea, Legend
@@ -101,11 +101,11 @@ export default function EnergyPanel({ siteData, site }) {
       {/* Energy metrics */}
       <div className="metrics-grid">
         <div className="metric-card">
-          <div className="metric-label">&#9889; Generated</div>
+          <div className="metric-label">Generated</div>
           <div className="metric-value good">{formatWh(energy.generated_wh)}</div>
         </div>
         <div className="metric-card">
-          <div className="metric-label">&#128267; Consumed</div>
+          <div className="metric-label">Consumed</div>
           <div className="metric-value neutral">{formatWh(energy.consumed_wh)}</div>
         </div>
         <div className="metric-card">

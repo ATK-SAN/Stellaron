@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+﻿import { useState, useCallback } from 'react'
 
 export default function MissionPlannerHeadline({ site, siteData }) {
   const [copied, setCopied] = useState(false)
@@ -63,7 +63,7 @@ export default function MissionPlannerHeadline({ site, siteData }) {
       {/* Header Tag with Actions */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '0.9rem' }}>⏱️</span>
+          
           <span style={{
             fontFamily: 'var(--font-label)',
             fontSize: '0.64rem',
@@ -107,7 +107,7 @@ export default function MissionPlannerHeadline({ site, siteData }) {
                 gap: '4px'
               }}
             >
-              <span>{isSpeaking ? '⏹ Stop' : '🔊 Listen'}</span>
+              <span>{isSpeaking ? 'Stop' : 'Listen'}</span>
             </button>
           )}
 
@@ -126,7 +126,7 @@ export default function MissionPlannerHeadline({ site, siteData }) {
               cursor: 'pointer'
             }}
           >
-            {copied ? '✓ Copied' : '📋 Copy Briefing'}
+            {copied ? '✓ Copied' : 'Copy Briefing'}
           </button>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+﻿import { useMemo } from 'react'
 
 /**
  * OrthographicPolarMap
@@ -65,7 +65,7 @@ export default function OrthographicPolarMap({
       {/* Title */}
       <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ fontSize: '0.9rem' }}>🧭</span>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--color-cyan)', boxShadow: '0 0 6px var(--color-cyan)' }} />
           <span style={{
             fontFamily: 'var(--font-display)',
             fontSize: '0.78rem',

@@ -1,7 +1,12 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
+﻿import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { Canvas, useFrame, useLoader } from '@react-three/fiber'
 import { OrbitControls, Stars, Html } from '@react-three/drei'
 import * as THREE from 'three'
+import {
+  ChevronLeft, Sun, Globe, Radio, Moon, Camera, Maximize2,
+  BookOpen, X, ChevronDown, ChevronUp, Image, MousePointer2,
+  MapPin, Wifi, WifiOff, Telescope, Satellite
+} from 'lucide-react'
 
 // ─── Coordinate Helpers ────────────────────────────────────────────────────
 
@@ -105,7 +110,7 @@ function EarthObject({ earthAzDeg, earthElDeg, distance = 4.6, isVisible, showLa
             display: 'flex', alignItems: 'center', gap: '4px',
             whiteSpace: 'nowrap'
           }}>
-            <span>🌍 EARTH</span>
+            <Globe size={12} strokeWidth={1.5} />
             <span style={{ fontSize: '9px', opacity: 0.85 }}>
               {isVisible ? 'DTE ONLINE' : 'OCCLUDED'}
             </span>
@@ -154,7 +159,7 @@ function SunObject({ sunAzDeg, sunElDeg, distance = 4.8, showLabels }) {
             boxShadow: '0 0 12px rgba(251,191,36,0.9)',
             whiteSpace: 'nowrap'
           }}>
-            ☀️ THE SUN
+            ☀ THE SUN
           </div>
         </Html>
       )}
@@ -301,12 +306,12 @@ function MoonWithSite({ site, sunVisible, earthVisible, sitePosVec, showLabels }
               backdropFilter: 'blur(4px)',
               whiteSpace: 'nowrap'
             }}>
-              <span>📍</span>
+              <MapPin size={11} strokeWidth={1.5} style={{ flexShrink: 0 }} />
               <span style={{ maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {site.name}
               </span>
               <span style={{ color: earthVisible ? '#38bdf8' : '#ef4444', fontSize: '10px' }}>
-                {earthVisible ? '📶' : '❌'}
+                {earthVisible ? <Wifi size={11} strokeWidth={2} /> : <WifiOff size={11} strokeWidth={2} />}
               </span>
             </div>
           </Html>
@@ -529,7 +534,7 @@ function ScienceCard({ site, mSun, mEarth, isOpen, isDismissed, onToggle, onDism
           onClick={onToggle}
           style={{ display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer', flex: 1 }}
         >
-          <span style={{ fontSize: '0.9rem' }}>🎓</span>
+          <BookOpen size={15} strokeWidth={1.5} style={{ color: 'var(--color-cyan)', flexShrink: 0 }} />
           <span style={{
             fontFamily: 'var(--font-display)',
             fontSize: '0.74rem',
@@ -597,25 +602,25 @@ function ScienceCard({ site, mSun, mEarth, isOpen, isDismissed, onToggle, onDism
             border: '1px solid rgba(255,255,255,0.06)'
           }}>
             <div>
-              <div style={{ fontFamily: 'var(--font-label)', fontSize: '0.58rem', color: '#64748b' }}>☀️ TOTAL SUNLIGHT</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>TOTAL SUNLIGHT</div>
               <div style={{ fontFamily: 'var(--font-display)', color: '#fbbf24', fontSize: '0.88rem', fontWeight: 800 }}>
                 {((mSun?.sunlight_fraction ?? 0) * 100).toFixed(1)}%
               </div>
             </div>
             <div>
-              <div style={{ fontFamily: 'var(--font-label)', fontSize: '0.58rem', color: '#64748b' }}>🌍 EARTH VISIBILITY</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>EARTH VISIBILITY</div>
               <div style={{ fontFamily: 'var(--font-display)', color: '#38bdf8', fontSize: '0.88rem', fontWeight: 800 }}>
                 {((mEarth?.visibility_fraction ?? 0) * 100).toFixed(1)}%
               </div>
             </div>
             <div>
-              <div style={{ fontFamily: 'var(--font-label)', fontSize: '0.58rem', color: '#64748b' }}>🌑 LONGEST NIGHT</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>LONGEST NIGHT</div>
               <div style={{ fontFamily: 'var(--font-display)', color: (mSun?.longest_dark_run_s ?? 0) > 432000 ? '#f87171' : '#34d399', fontSize: '0.88rem', fontWeight: 800 }}>
                 {((mSun?.longest_dark_run_s ?? 0) / 3600).toFixed(1)} h
               </div>
             </div>
             <div>
-              <div style={{ fontFamily: 'var(--font-label)', fontSize: '0.58rem', color: '#64748b' }}>📡 MAX COMMS BLACKOUT</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em' }}>MAX COMMS BLACKOUT</div>
               <div style={{ fontFamily: 'var(--font-display)', color: (mEarth?.longest_earth_blackout_s ?? 0) > 432000 ? '#f87171' : '#34d399', fontSize: '0.88rem', fontWeight: 800 }}>
                 {((mEarth?.longest_earth_blackout_s ?? 0) / 3600).toFixed(1)} h
               </div>
@@ -721,19 +726,11 @@ export default function CelestialSimulator({ site, siteData, onBack }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button
             onClick={onBack}
-            style={{
-              fontFamily: 'var(--font-ui)',
-              background: 'rgba(255,255,255,0.05)',
-              color: '#38bdf8',
-              border: '1px solid rgba(56,189,248,0.25)',
-              borderRadius: '6px',
-              padding: '5px 11px',
-              fontSize: '0.72rem',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
+            className="btn btn-secondary"
+            style={{ padding: '5px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px' }}
           >
-            ← Back
+            <ChevronLeft size={14} strokeWidth={1.5} />
+            <span>Back</span>
           </button>
           <div>
             <div style={{
@@ -745,7 +742,7 @@ export default function CelestialSimulator({ site, siteData, onBack }) {
               alignItems: 'center',
               gap: '8px'
             }}>
-              ☀️🌍 Sun & Earth Orbital Simulator
+              Sun &amp; Earth Orbital Simulator
               <span style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '0.6rem',
@@ -787,7 +784,7 @@ export default function CelestialSimulator({ site, siteData, onBack }) {
             fontSize: '0.68rem',
             color: '#cbd5e1'
           }}>
-            ☀️ <strong style={{ color: '#fbbf24' }}>{currentSunAz.toFixed(1)}°</strong> Az | <strong style={{ color: currentSunEl >= 0 ? '#34d399' : '#f87171' }}>{currentSunEl.toFixed(2)}°</strong> El
+            SUN: <strong style={{ color: '#fbbf24' }}>{currentSunAz.toFixed(1)}�</strong> Az | <strong style={{ color: currentSunEl >= 0 ? '#34d399' : '#f87171' }}>{currentSunEl.toFixed(2)}�</strong> El
           </div>
 
           <div style={{
@@ -799,7 +796,7 @@ export default function CelestialSimulator({ site, siteData, onBack }) {
             fontSize: '0.68rem',
             color: '#cbd5e1'
           }}>
-            🌍 <strong style={{ color: '#38bdf8' }}>{currentEarthAz.toFixed(1)}°</strong> Az | <strong style={{ color: currentEarthEl >= 0 ? '#38bdf8' : '#f87171' }}>{currentEarthEl.toFixed(2)}°</strong> El
+            EARTH: <strong style={{ color: '#38bdf8' }}>{currentEarthAz.toFixed(1)}�</strong> Az | <strong style={{ color: currentEarthEl >= 0 ? '#38bdf8' : '#f87171' }}>{currentEarthEl.toFixed(2)}�</strong> El
           </div>
 
           <div style={{
@@ -812,7 +809,7 @@ export default function CelestialSimulator({ site, siteData, onBack }) {
             fontWeight: 700,
             color: currentEarthVis ? '#38bdf8' : '#f87171'
           }}>
-            {currentEarthVis ? '📶 DTE ACTIVE' : '❌ BLACKOUT'}
+            {currentEarthVis ? 'DTE ACTIVE' : 'BLACKOUT'}
           </div>
 
           {!currentEarthVis && nextContactHours !== null && (
@@ -884,7 +881,8 @@ export default function CelestialSimulator({ site, siteData, onBack }) {
               gap: '6px'
             }}
           >
-            <span>🎓</span> Show Site Physics Guide
+            <BookOpen size={13} strokeWidth={1.5} />
+            <span>Site Physics Guide</span>
           </button>
         )}
 
@@ -919,31 +917,38 @@ export default function CelestialSimulator({ site, siteData, onBack }) {
               CAMERA PRESETS
             </div>
             {[
-              { id: 'overview', label: '🌐 Free Orbital Overview' },
-              { id: 'site_zoom', label: '📍 Zoom to Site' },
-              { id: 'surface_vantage', label: '🌄 Surface Horizon Vantage' },
-              { id: 'track_earth', label: '🛰 Track Earth DTE Vector' },
-            ].map(btn => (
-              <button
-                key={btn.id}
-                onClick={() => setCameraMode(btn.id)}
-                style={{
-                  fontFamily: 'var(--font-ui)',
-                  background: cameraMode === btn.id ? '#0284c7' : 'rgba(255,255,255,0.04)',
-                  color: cameraMode === btn.id ? '#fff' : '#94a3b8',
-                  border: 'none',
-                  borderRadius: '5px',
-                  padding: '6px 12px',
-                  fontSize: '0.68rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'all 0.15s'
-                }}
-              >
-                {btn.label}
-              </button>
-            ))}
+              { id: 'overview', label: 'Free Orbital Overview', icon: Globe },
+              { id: 'site_zoom', label: 'Zoom to Site', icon: MapPin },
+              { id: 'surface_vantage', label: 'Surface Horizon Vantage', icon: Telescope },
+              { id: 'track_earth', label: 'Track Earth DTE Vector', icon: Satellite },
+            ].map(btn => {
+              const IconComp = btn.icon
+              return (
+                <button
+                  key={btn.id}
+                  onClick={() => setCameraMode(btn.id)}
+                  style={{
+                    fontFamily: 'var(--font-ui)',
+                    background: cameraMode === btn.id ? 'var(--color-cyan-subtle)' : 'rgba(255,255,255,0.04)',
+                    color: cameraMode === btn.id ? 'var(--color-cyan)' : 'var(--text-secondary)',
+                    border: cameraMode === btn.id ? '1px solid var(--color-cyan-border)' : '1px solid transparent',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '6px 10px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    textAlign: 'left',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  <IconComp size={13} strokeWidth={1.5} />
+                  <span>{btn.label}</span>
+                </button>
+              )
+            })}
           </div>
 
           {/* Quick Visual Layer Toggles & Snapshot */}
@@ -992,29 +997,33 @@ export default function CelestialSimulator({ site, siteData, onBack }) {
               title="Download PNG snapshot of simulation"
               style={{
                 fontFamily: 'var(--font-mono)',
-                background: 'rgba(251,191,36,0.15)',
-                color: '#fbbf24',
-                border: '1px solid rgba(251,191,36,0.35)',
-                borderRadius: '4px',
+                background: 'var(--color-cyan-subtle)',
+                color: 'var(--color-cyan)',
+                border: '1px solid var(--color-cyan-border)',
+                borderRadius: 'var(--radius-sm)',
                 padding: '4px 8px',
-                fontSize: '0.64rem',
+                fontSize: '11px',
                 cursor: 'pointer',
-                fontWeight: 600
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
               }}
             >
-              📸 Snapshot
+              <Camera size={12} strokeWidth={1.5} />
+              <span>Snapshot</span>
             </button>
           </div>
 
           {/* Interactive Free-Look Hint */}
           <div style={{
             fontFamily: 'var(--font-mono)',
-            fontSize: '0.6rem',
-            color: '#475569',
+            fontSize: '10px',
+            color: 'var(--text-tertiary)',
             textAlign: 'right',
             paddingRight: '4px'
           }}>
-            🖱 Drag to rotate · Scroll to zoom
+            Drag to rotate · Scroll to zoom
           </div>
         </div>
       </div>
@@ -1071,7 +1080,7 @@ export default function CelestialSimulator({ site, siteData, onBack }) {
                 gap: '5px'
               }}
             >
-              {isPlaying ? '⏸ Pause Orbit' : '▶ Play Orbit'}
+              {isPlaying ? 'Pause' : 'Play'}
             </button>
 
             <button
@@ -1087,7 +1096,7 @@ export default function CelestialSimulator({ site, siteData, onBack }) {
                 cursor: 'pointer'
               }}
             >
-              ⏮ Reset Day 0
+              Reset Day 0
             </button>
 
             {/* Precision Step Buttons (-6h / +6h) */}

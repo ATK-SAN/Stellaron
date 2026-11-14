@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+﻿import { useMemo } from 'react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ReferenceLine, ResponsiveContainer, Legend
@@ -93,7 +93,7 @@ export default function TimelinePanel({ siteData, site }) {
       {/* Summary metrics */}
       <div className="metrics-grid">
         <div className="metric-card">
-          <div className="metric-label">☀ Sun Visible</div>
+          <div className="metric-label">Sun Visible</div>
           <div className={`metric-value ${summaryMetrics.sunPct > 40 ? 'good' : summaryMetrics.sunPct > 20 ? 'warn' : 'bad'}`}>
             {summaryMetrics.sunPct.toFixed(1)}%
           </div>
@@ -102,33 +102,33 @@ export default function TimelinePanel({ siteData, site }) {
           </div>
         </div>
         <div className="metric-card">
-          <div className="metric-label">🌍 Earth Visible</div>
+          <div className="metric-label">Earth Visible</div>
           <div className={`metric-value ${summaryMetrics.earthPct > 50 ? 'good' : summaryMetrics.earthPct > 10 ? 'warn' : 'bad'}`}>
             {summaryMetrics.earthPct.toFixed(1)}%
           </div>
         </div>
         <div className="metric-card">
-          <div className="metric-label">🌑 Longest Darkness</div>
+          <div className="metric-label">Longest Darkness</div>
           <div className="metric-value warn">
             {site?.longest_darkness_hours?.toFixed(1) ?? '—'}h
           </div>
         </div>
         <div className="metric-card">
-          <div className="metric-label">📡 Earth Blackout</div>
+          <div className="metric-label">Earth Blackout</div>
           <div className="metric-value warn">
             {site?.longest_earth_blackout_hours?.toFixed(1) ?? '—'}h
           </div>
         </div>
         {site?.max_solar_elevation_deg != null && (
           <div className="metric-card">
-            <div className="metric-label">☀ Max Solar Elev.</div>
+            <div className="metric-label">Max Solar Elev.</div>
             <div className="metric-value neutral">
               {site.max_solar_elevation_deg.toFixed(2)}°
             </div>
           </div>
         )}
         <div className="metric-card">
-          <div className="metric-label">📊 Transitions</div>
+          <div className="metric-label">Transitions</div>
           <div className="metric-value neutral">
             {(siteData?.refined_transitions?.length ?? 0)}
           </div>

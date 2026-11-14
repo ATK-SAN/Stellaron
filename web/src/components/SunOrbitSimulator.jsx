@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+﻿import { useState, useRef, useEffect, useMemo } from 'react'
 import { Canvas, useFrame, useLoader } from '@react-three/fiber'
 import { OrbitControls, Stars, Html } from '@react-three/drei'
 import * as THREE from 'three'
@@ -64,7 +64,7 @@ function SunObject({ sunAzDeg, sunElDeg, distance = 4.2 }) {
           whiteSpace: 'nowrap',
           boxShadow: '0 0 16px rgba(251, 191, 36, 0.8)'
         }}>
-          ☀️ THE SUN
+          THE SUN
         </div>
       </Html>
     </group>
@@ -112,7 +112,7 @@ function MoonGlobe({ site, sunVisible }) {
             fontWeight: 800,
             whiteSpace: 'nowrap'
           }}>
-            📍 {site.name} ({sunVisible ? '☀️ LIT' : '🌑 DARK'})
+            {site.name} ({sunVisible ? 'LIT' : 'DARK'})
           </div>
         </Html>
       </group>
@@ -242,7 +242,7 @@ export default function SunOrbitSimulator({ site, siteData, onBack }) {
             fontWeight: 700,
             color: currentSunVis ? '#4ade80' : '#f87171'
           }}>
-            {currentSunVis ? '☀️ SUNLIT' : '🌑 OCCLUDED (SHADOW)'}
+            {currentSunVis ? 'SUNLIT' : 'SHADOW'}
           </div>
         </div>
       </div>
@@ -278,7 +278,7 @@ export default function SunOrbitSimulator({ site, siteData, onBack }) {
           boxShadow: '0 8px 32px rgba(0,0,0,0.6)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-            <span style={{ fontSize: '1rem' }}>🎓</span>
+            
             <strong style={{ color: '#38bdf8', fontSize: '0.78rem' }}>
               {isSouthPole ? 'The South Pole Grazing Sun Phenomenon' : isEquator ? 'Equatorial Day/Night Cycle' : 'Lunar Solar Illumination'}
             </strong>

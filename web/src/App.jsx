@@ -1,20 +1,44 @@
+/** App.jsx — STELLARON Mission Control Dashboard (NASA Space Apps 2026)
+ *
+ * Restyled with:
+ * - Slim left icon rail navigation (56px) replacing the cluttered 8-tab top bar
+ * - Minimal top bar holding only: STELLARON wordmark, mission context, live UTC clock, data status
+ * - 3-Column Layout: Left Rail + Site List (280px) | Center Hero 3D Viewport | Right Contextual Site Panel (340px)
+ * - Deep space #05070D base with layered #111827 panels, borders rgba(255,255,255,0.08)
+ * - Electric cyan #22D3EE as single accent
+ * - Zero overflow or clipping at 1366px width
+ * - Lucide line icons throughout (zero emojis)
+ */
+
 import { useState, useEffect } from 'react'
+import {
+  Compass,
+  Sun,
+  Mountain,
+  Activity,
+  BatteryCharging,
+  CheckSquare,
+  Rocket,
+  Globe,
+  Layers,
+  ChevronLeft,
+  Sliders,
+  Radio,
+  Clock,
+  Sparkles,
+} from 'lucide-react'
 import SiteSelector from './components/SiteSelector'
 import HorizonGlobe from './components/HorizonGlobe'
 import TerrainViewer from './components/TerrainViewer'
 import TimelinePanel from './components/TimelinePanel'
 import EnergyPanel from './components/EnergyPanel'
-import ProvenanceBadge from './components/ProvenanceBadge'
 import NasaCrossCheckPanel from './components/NasaCrossCheckPanel'
 import SunOrbitSimulator from './components/SunOrbitSimulator'
 import CelestialSimulator from './components/CelestialSimulator'
 import HorizonSkyline from './components/HorizonSkyline'
 import OrthographicPolarMap from './components/OrthographicPolarMap'
-import MissionPlannerHeadline from './components/MissionPlannerHeadline'
+import ContextualSitePanel from './components/ContextualSitePanel'
 import MissionRehearsal from './components/MissionRehearsal'
-
-// Clean pages / windows
-// 'explorer' | 'celestial' | 'horizon' | 'timeline' | 'energy' | 'nasa' | 'provenance'
 
 export default function App() {
   const [sites, setSites] = useState([])
@@ -23,9 +47,19 @@ export default function App() {
   const [loadingData, setLoadingData] = useState(false)
   const [activeWindow, setActiveWindow] = useState('explorer')
   const [skylineStep, setSkylineStep] = useState(0)
-  const [view3DMode, setView3DMode] = useState('split') // 'split' | 'globe' | 'terrain'
+  const [view3DMode, setView3DMode] = useState('split') // 'split' | 'globe' | 'terrain' | 'polar'
+  const [missionSlipDays, setMissionSlipDays] = useState(0)
+  const [utcTime, setUtcTime] = useState(() => new Date().toISOString().slice(0, 19).replace('T', ' ') + ' UTC')
 
-  // Load library index on mount
+  // Live Mission Control UTC Clock
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setUtcTime(new Date().toISOString().slice(0, 19).replace('T', ' ') + ' UTC')
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  // Load candidate sites library on mount
   useEffect(() => {
     fetch('/data/library_index.json')
       .then(r => r.json())
@@ -39,7 +73,7 @@ export default function App() {
       .catch(err => console.error('Failed to load library_index.json', err))
   }, [])
 
-  // Load site data when selection changes
+  // Load site precomputed ephemeris data when selection changes
   useEffect(() => {
     if (!selectedSite) return
     setLoadingData(true)
@@ -60,198 +94,205 @@ export default function App() {
       })
   }, [selectedSite])
 
+  // Navigation rail definition
+  const navItems = [
+    { id: 'explorer', label: '3D Site Explorer', icon: Compass },
+    { id: 'celestial', label: 'Sun & Earth Simulator', icon: Sun },
+    { id: 'horizon', label: 'Horizon Skyline', icon: Mountain },
+    { id: 'timeline', label: 'Illumination Timeline', icon: Activity },
+    { id: 'energy', label: 'Lander Battery Lab', icon: BatteryCharging },
+    { id: 'nasa', label: 'NASA Cross-Check', icon: CheckSquare },
+    { id: 'rehearsal', label: 'Mission Rehearsal', icon: Rocket },
+  ]
+
+  const handleLaunchRehearsal = (site) => {
+    if (site) setSelectedSite(site)
+    setActiveWindow('rehearsal')
+  }
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: '#050711' }}>
-      {/* Top Application Header */}
-      <header className="app-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: 'var(--color-bg)' }}>
+      {/* ── Top Bar: Wordmark, Mission Context, Clock, Status Dot ── */}
+      <header style={{
+        height: '48px',
+        background: 'var(--color-surface)',
+        borderBottom: '1px solid var(--color-border)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 20px',
+        flexShrink: 0,
+        zIndex: 30,
+      }}>
+        {/* Left: STELLARON Wordmark + Context */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{
-            width: '28px',
-            height: '28px',
-            borderRadius: '6px',
-            background: 'linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)',
+            width: '26px',
+            height: '26px',
+            borderRadius: 'var(--radius-sm)',
+            background: 'var(--color-cyan)',
+            color: '#05070D',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 0 12px rgba(56,189,248,0.4)',
-            color: '#fff',
             fontWeight: 800,
-            fontSize: '14px'
+            fontSize: '13px',
+            boxShadow: '0 0 14px rgba(34, 211, 238, 0.4)',
           }}>
-            ⬡
+            S
           </div>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, letterSpacing: '0.12em', color: '#f8fafc' }}>
+
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
+            <h1 style={{ margin: 0, fontSize: '15px', fontWeight: 800, letterSpacing: '0.10em', color: 'var(--text-primary)' }}>
               STELLARON
             </h1>
-            <div style={{ fontSize: '0.62rem', color: '#38bdf8', letterSpacing: '0.04em', fontWeight: 600 }}>
-              LUNAR LANDING SITE NAVIGATOR · NASA SPACE APPS 2026
-            </div>
+            <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase', fontWeight: 600 }}>
+              Lunar Landing Site Navigator · NASA Space Apps 2026
+            </span>
           </div>
         </div>
 
-        {/* Global Navigation Guide for Students & Researchers */}
-        <div style={{ display: 'flex', gap: '4px', marginLeft: '30px' }}>
-          {[
-            { id: 'explorer', label: '🪐 3D Site Explorer', icon: '🪐' },
-            { id: 'celestial', label: '☀️🌍 Sun & Earth Simulator', icon: '☀️' },
-            { id: 'horizon', label: '🌅 Horizon Skyline', icon: '🌅' },
-            { id: 'timeline', label: '📈 Illumination Timeline', icon: '📈' },
-            { id: 'energy', label: '⚡ Lander Battery Lab', icon: '⚡' },
-            { id: 'nasa', label: '🔬 NASA Cross-Check', icon: '🔬' },
-            { id: 'rehearsal', label: '🛸 Mission Rehearsal', icon: '🛸' },
-          ].map(page => (
-            <button
-              key={page.id}
-              onClick={() => setActiveWindow(page.id)}
-              style={{
-                background: activeWindow === page.id ? 'rgba(56, 189, 248, 0.2)' : 'transparent',
-                color: activeWindow === page.id ? '#38bdf8' : '#94a3b8',
-                border: activeWindow === page.id ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid transparent',
-                borderRadius: '5px',
-                padding: '5px 11px',
-                fontSize: '0.72rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.15s'
-              }}
-            >
-              {page.label}
-            </button>
-          ))}
-        </div>
-
-        {/* NASA SPICE Status Tag */}
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Right: Live UTC Clock + Data Status Indicator */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <div style={{
-            background: 'rgba(15, 23, 42, 0.7)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: '6px',
-            padding: '4px 10px',
-            fontSize: '0.66rem',
-            color: '#94a3b8',
-            fontFamily: 'monospace'
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '12px',
+            color: 'var(--text-secondary)',
           }}>
-            🛰 NASA JPL DE421 SPICE · 100% Offline Static
+            <Clock size={13} strokeWidth={1.5} style={{ color: 'var(--color-cyan)' }} />
+            <span>{utcTime}</span>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'var(--color-panel)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-pill)',
+            padding: '3px 10px',
+            fontSize: '11px',
+            fontFamily: 'var(--font-mono)',
+            color: 'var(--text-secondary)',
+          }}>
+            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--color-safe)', boxShadow: '0 0 8px var(--color-safe)' }} />
+            <span>JPL DE421 SPICE · ONLINE</span>
           </div>
         </div>
       </header>
 
-      {/* Main Body */}
-      <div className="app-body">
-        {/* Left Sidebar: Site Selector (Visible across views so user can always switch sites) */}
-        <aside className="sidebar" style={{ width: '310px' }}>
-          <SiteSelector
-            sites={sites}
-            selectedSite={selectedSite}
-            onSelect={(site) => {
-              setSelectedSite(site)
-            }}
-          />
-        </aside>
+      {/* ── Main Workspace: Left Slim Rail + Context ── */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        {/* Slim Left Icon Rail (56px Width) */}
+        <nav style={{
+          width: '56px',
+          background: 'var(--color-surface)',
+          borderRight: '1px solid var(--color-border)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          padding: '12px 0',
+          gap: '8px',
+          flexShrink: 0,
+          zIndex: 25,
+        }}>
+          {navItems.map(item => {
+            const ItemIcon = item.icon
+            const isActive = activeWindow === item.id
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveWindow(item.id)}
+                title={item.label}
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: 'var(--radius-md)',
+                  background: isActive ? 'var(--color-panel-elevated)' : 'transparent',
+                  border: isActive ? '1px solid var(--color-cyan-border)' : '1px solid transparent',
+                  borderLeft: isActive ? '3px solid var(--color-cyan)' : '3px solid transparent',
+                  color: isActive ? 'var(--color-cyan)' : 'var(--text-tertiary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 150ms ease',
+                  position: 'relative',
+                }}
+              >
+                <ItemIcon size={18} strokeWidth={isActive ? 2 : 1.5} />
+              </button>
+            )
+          })}
+        </nav>
 
-        {/* Right Main Secluded Workspace */}
-        <main className="main-panel">
-          {/* WINDOW 1: Dedicated 3D Lunar & Ridge Explorer (Clean visual focus!) */}
+        {/* ── VIEWPORT CONTENT ── */}
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+          {/* WINDOW 1: 3D Site Explorer (3-Column Layout: Site List | Full-Bleed 3D | Context Panel) */}
           {activeWindow === 'explorer' && selectedSite && (
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto' }}>
-              {/* Upper 3D Dual-Viewport: ONLY the Moon Globe & Ridge Model */}
-              <div style={{
-                position: 'relative',
-                height: view3DMode === 'split' ? '370px' : '440px',
-                flexShrink: 0,
-                borderBottom: '1px solid rgba(255,255,255,0.08)',
-                background: '#070a17'
-              }}>
-                {/* 3D Viewport Toolbar */}
+            <div style={{ display: 'flex', width: '100%', height: '100%', overflow: 'hidden' }}>
+              {/* Column 1: Site Selector (280px) */}
+              <aside style={{ width: '280px', flexShrink: 0, height: '100%', overflow: 'hidden' }}>
+                <SiteSelector
+                  sites={sites}
+                  selectedSite={selectedSite}
+                  onSelect={(site) => setSelectedSite(site)}
+                />
+              </aside>
+
+              {/* Column 2: Center Full-Bleed 3D Viewport Hero */}
+              <main style={{ flex: 1, height: '100%', position: 'relative', overflow: 'hidden', background: '#05070D' }}>
+                {/* Floating Viewport Mode Selector (Glass Panel, 12px margin) */}
                 <div style={{
                   position: 'absolute',
-                  top: 10,
-                  right: 12,
-                  zIndex: 10,
-                  display: 'flex',
-                  gap: '4px',
-                  background: 'rgba(6, 11, 25, 0.85)',
-                  backdropFilter: 'blur(8px)',
-                  padding: '3px',
-                  borderRadius: '6px',
-                  border: '1px solid rgba(255,255,255,0.1)'
+                  top: 12,
+                  left: 12,
+                  zIndex: 15,
+                  pointerEvents: 'none',
                 }}>
-                  <button
-                    onClick={() => setView3DMode('split')}
-                    style={{
-                      background: view3DMode === 'split' ? '#0284c7' : 'transparent',
-                      color: view3DMode === 'split' ? '#fff' : '#94a3b8',
-                      border: 'none',
-                      padding: '4px 9px',
-                      borderRadius: '4px',
-                      fontSize: '0.65rem',
-                      cursor: 'pointer',
-                      fontWeight: 600
-                    }}
-                  >
-                    Split 3D
-                  </button>
-                  <button
-                    onClick={() => setView3DMode('globe')}
-                    style={{
-                      background: view3DMode === 'globe' ? '#0284c7' : 'transparent',
-                      color: view3DMode === 'globe' ? '#fff' : '#94a3b8',
-                      border: 'none',
-                      padding: '4px 9px',
-                      borderRadius: '4px',
-                      fontSize: '0.65rem',
-                      cursor: 'pointer',
-                      fontWeight: 600
-                    }}
-                  >
-                    Full Globe View
-                  </button>
-                  <button
-                    onClick={() => setView3DMode('terrain')}
-                    style={{
-                      fontFamily: 'var(--font-ui)',
-                      background: view3DMode === 'terrain' ? '#0284c7' : 'transparent',
-                      color: view3DMode === 'terrain' ? '#fff' : '#94a3b8',
-                      border: 'none',
-                      padding: '4px 9px',
-                      borderRadius: '4px',
-                      fontSize: '0.65rem',
-                      cursor: 'pointer',
-                      fontWeight: 600
-                    }}
-                  >
-                    Full Ridge/DTM View
-                  </button>
-                  <button
-                    onClick={() => setView3DMode('polar')}
-                    style={{
-                      fontFamily: 'var(--font-ui)',
-                      background: view3DMode === 'polar' ? '#0284c7' : 'transparent',
-                      color: view3DMode === 'polar' ? '#fff' : '#94a3b8',
-                      border: 'none',
-                      padding: '4px 9px',
-                      borderRadius: '4px',
-                      fontSize: '0.65rem',
-                      cursor: 'pointer',
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
-                  >
-                    <span>🧭</span> South Pole Radar
-                  </button>
+                  <div className="segmented-control" style={{ pointerEvents: 'auto', background: 'var(--color-panel-glass)', backdropFilter: 'blur(8px)' }}>
+                    <button
+                      onClick={() => setView3DMode('split')}
+                      className={`segmented-item ${view3DMode === 'split' ? 'active' : ''}`}
+                    >
+                      <Layers size={13} strokeWidth={1.5} />
+                      <span>Split 3D</span>
+                    </button>
+                    <button
+                      onClick={() => setView3DMode('globe')}
+                      className={`segmented-item ${view3DMode === 'globe' ? 'active' : ''}`}
+                    >
+                      <Globe size={13} strokeWidth={1.5} />
+                      <span>Moon Globe</span>
+                    </button>
+                    <button
+                      onClick={() => setView3DMode('terrain')}
+                      className={`segmented-item ${view3DMode === 'terrain' ? 'active' : ''}`}
+                    >
+                      <Mountain size={13} strokeWidth={1.5} />
+                      <span>Ridge DTM</span>
+                    </button>
+                    <button
+                      onClick={() => setView3DMode('polar')}
+                      className={`segmented-item ${view3DMode === 'polar' ? 'active' : ''}`}
+                    >
+                      <Compass size={13} strokeWidth={1.5} />
+                      <span>Polar Radar</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* 3D Viewport Content */}
                 <div style={{ display: 'flex', width: '100%', height: '100%' }}>
                   {(view3DMode === 'split' || view3DMode === 'globe') && (
                     <div style={{
-                      flex: view3DMode === 'split' ? '0 0 44%' : '1',
+                      flex: view3DMode === 'split' ? '0 0 46%' : '1',
                       height: '100%',
                       position: 'relative',
-                      borderRight: view3DMode === 'split' ? '1px solid rgba(255,255,255,0.08)' : 'none'
+                      borderRight: view3DMode === 'split' ? '1px solid var(--color-border)' : 'none',
                     }}>
                       <HorizonGlobe
                         sites={sites}
@@ -268,7 +309,7 @@ export default function App() {
                   )}
 
                   {view3DMode === 'polar' && (
-                    <div style={{ flex: '1', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#040714', padding: '10px' }}>
+                    <div style={{ flex: '1', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#05070D', padding: '16px' }}>
                       <OrthographicPolarMap
                         sites={sites}
                         selectedSite={selectedSite}
@@ -279,504 +320,203 @@ export default function App() {
                     </div>
                   )}
                 </div>
-              </div>
+              </main>
 
-              {/* Lower Section: Simple Site Story & Guide Actions (NO chart clutter!) */}
-              <div style={{ padding: '18px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {/* Header row with Title and Essential Numbers */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                      <h2 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: '1.35rem', fontWeight: 800, color: '#f8fafc' }}>
-                        {selectedSite.name}
-                      </h2>
-                      <span style={{
-                        background: 'rgba(56, 189, 248, 0.12)',
-                        color: '#38bdf8',
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        fontSize: '0.68rem',
-                        fontWeight: 700
-                      }}>
-                        {selectedSite.coverage?.toUpperCase()}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: '0.72rem', color: '#64748b', fontFamily: 'monospace' }}>
-                      Lat: {selectedSite.lat_deg}° · Lon: {selectedSite.lon_deg}° · Elevation: {selectedSite.elevation_m}m · Source: {selectedSite.source}
-                    </div>
-                  </div>
-
-                  {/* Quick Vital Stats Badges */}
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <div style={{
-                      background: 'rgba(251, 191, 36, 0.1)',
-                      border: '1px solid rgba(251, 191, 36, 0.25)',
-                      borderRadius: '6px',
-                      padding: '8px 12px',
-                      textAlign: 'center'
-                    }}>
-                      <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>☀️ SUNLIGHT</div>
-                      <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 800, color: '#fbbf24' }}>
-                        {((selectedSite.sunlight_fraction ?? 0) * 100).toFixed(1)}%
-                      </div>
-                    </div>
-                    <div style={{
-                      background: 'rgba(56, 189, 248, 0.1)',
-                      border: '1px solid rgba(56, 189, 248, 0.25)',
-                      borderRadius: '6px',
-                      padding: '8px 12px',
-                      textAlign: 'center'
-                    }}>
-                      <div style={{ fontSize: '0.62rem', color: '#94a3b8' }}>🌍 EARTH COMMS</div>
-                      <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 800, color: '#38bdf8' }}>
-                        {((selectedSite.geometric_earth_visibility_fraction ?? 0) * 100).toFixed(1)}%
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 10-Second Mission Planner Headline Assessment */}
-                <MissionPlannerHeadline site={selectedSite} siteData={siteData} />
-
-                {/* Simple Description for Students & Public */}
-                <div style={{
-                  background: 'rgba(15, 23, 42, 0.55)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '8px',
-                  padding: '14px 18px',
-                  lineHeight: 1.5,
-                  fontSize: '0.82rem',
-                  color: '#e2e8f0'
-                }}>
-                  <strong style={{ color: '#38bdf8' }}>What is this place? </strong>
-                  {selectedSite.simple_description || selectedSite.description}
-                </div>
-
-                {/* Why NASA Cares & Fun Fact Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                  <div style={{
-                    background: 'rgba(15, 23, 42, 0.45)',
-                    border: '1px solid rgba(56, 189, 248, 0.2)',
-                    borderRadius: '8px',
-                    padding: '12px 16px'
-                  }}>
-                    <div style={{ color: '#38bdf8', fontSize: '0.74rem', fontWeight: 700, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span>🚀</span> Why NASA Cares About This Site
-                    </div>
-                    <div style={{ fontSize: '0.76rem', color: '#94a3b8', lineHeight: 1.45 }}>
-                      {selectedSite.why_nasa_cares || 'Key Artemis exploration region studied for persistent solar power and direct radio communications back to Earth.'}
-                    </div>
-                  </div>
-
-                  <div style={{
-                    background: 'rgba(15, 23, 42, 0.45)',
-                    border: '1px solid rgba(251, 191, 36, 0.2)',
-                    borderRadius: '8px',
-                    padding: '12px 16px'
-                  }}>
-                    <div style={{ color: '#fbbf24', fontSize: '0.74rem', fontWeight: 700, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span>💡</span> Lunar Fun Fact for Students
-                    </div>
-                    <div style={{ fontSize: '0.76rem', color: '#94a3b8', lineHeight: 1.45 }}>
-                      {selectedSite.key_fun_fact || 'The Moon experiences zero atmosphere, meaning temperatures range from scorching +250°F in sunlight to -250°F in shadows.'}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Dedicated Action Guide Buttons: Guide user to secluded windows */}
-                <div style={{ marginTop: '4px' }}>
-                  <div style={{ fontSize: '0.72rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: '8px' }}>
-                    Select an In-Depth Scientific Tool:
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
-                    <button
-                      onClick={() => setActiveWindow('celestial')}
-                      style={{
-                        background: 'linear-gradient(135deg, rgba(251,191,36,0.1) 0%, rgba(56,189,248,0.1) 100%)',
-                        border: '1px solid rgba(56, 189, 248, 0.4)',
-                        borderRadius: '8px',
-                        padding: '12px 14px',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        color: '#f8fafc',
-                        transition: 'all 0.15s'
-                      }}
-                    >
-                      <div style={{ color: '#38bdf8', fontWeight: 700, fontSize: '0.78rem', marginBottom: '3px' }}>
-                        ☀️🌍 Sun & Earth Simulator →
-                      </div>
-                      <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
-                        Dual 3D celestial model — real Earth libration loop, DTE comms blackout & camera zoom.
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => setActiveWindow('horizon')}
-                      style={{
-                        background: 'linear-gradient(135deg, rgba(52, 211, 153, 0.12) 0%, rgba(15, 23, 42, 0.8) 100%)',
-                        border: '1px solid rgba(52, 211, 153, 0.3)',
-                        borderRadius: '8px',
-                        padding: '12px 14px',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        color: '#f8fafc',
-                        transition: 'all 0.15s'
-                      }}
-                    >
-                      <div style={{ color: '#34d399', fontWeight: 700, fontSize: '0.78rem', marginBottom: '3px' }}>
-                        🌅 360° Horizon Skyline →
-                      </div>
-                      <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
-                        Panoramic LOLA terrain silhouette with animated Sun & Earth libration path overlay.
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => setActiveWindow('sun_sim')}
-                      style={{
-                        background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(15, 23, 42, 0.8) 100%)',
-                        border: '1px solid rgba(251, 191, 36, 0.35)',
-                        borderRadius: '8px',
-                        padding: '12px 14px',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        color: '#f8fafc',
-                        transition: 'all 0.15s'
-                      }}
-                    >
-                      <div style={{ color: '#fbbf24', fontWeight: 700, fontSize: '0.78rem', marginBottom: '3px' }}>
-                        ☀️ Live Sun Simulator &rarr;
-                      </div>
-                      <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
-                        Simulate the Sun orbiting around the Moon with time slider & SPICE cross-check.
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => setActiveWindow('timeline')}
-                      style={{
-                        background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.15) 0%, rgba(15, 23, 42, 0.8) 100%)',
-                        border: '1px solid rgba(56, 189, 248, 0.35)',
-                        borderRadius: '8px',
-                        padding: '12px 14px',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        color: '#f8fafc',
-                        transition: 'all 0.15s'
-                      }}
-                    >
-                      <div style={{ color: '#38bdf8', fontWeight: 700, fontSize: '0.78rem', marginBottom: '3px' }}>
-                        📈 Illumination Timeline &rarr;
-                      </div>
-                      <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
-                        Day-by-day 720-hour AreaChart of sunlight and Earth line-of-sight passes.
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => setActiveWindow('energy')}
-                      style={{
-                        background: 'linear-gradient(135deg, rgba(52, 211, 153, 0.15) 0%, rgba(15, 23, 42, 0.8) 100%)',
-                        border: '1px solid rgba(52, 211, 153, 0.35)',
-                        borderRadius: '8px',
-                        padding: '12px 14px',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        color: '#f8fafc',
-                        transition: 'all 0.15s'
-                      }}
-                    >
-                      <div style={{ color: '#34d399', fontWeight: 700, fontSize: '0.78rem', marginBottom: '3px' }}>
-                        ⚡ Lander Battery Lab &rarr;
-                      </div>
-                      <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
-                        Battery State of Charge curve, solar generation Wh, and 20% critical reserve limit.
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => setActiveWindow('nasa')}
-                      style={{
-                        background: 'linear-gradient(135deg, rgba(167, 139, 250, 0.15) 0%, rgba(15, 23, 42, 0.8) 100%)',
-                        border: '1px solid rgba(167, 139, 250, 0.35)',
-                        borderRadius: '8px',
-                        padding: '12px 14px',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        color: '#f8fafc',
-                        transition: 'all 0.15s'
-                      }}
-                    >
-                      <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: '0.78rem', marginBottom: '3px' }}>
-                        🔬 NASA Science Matrix &rarr;
-                      </div>
-                      <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
-                        Side-by-side comparison with Mazarico (2011), Gläser (2014), and Apollo reports.
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              </div>
+              {/* Column 3: Contextual Site Details Panel (340px) */}
+              <ContextualSitePanel
+                site={selectedSite}
+                siteData={siteData}
+                delayDays={missionSlipDays}
+                onDelayChange={setMissionSlipDays}
+                onLaunchRehearsal={handleLaunchRehearsal}
+              />
             </div>
           )}
 
-          {/* WINDOW 2: Dedicated Sun & Orbit Simulator */}
-          {activeWindow === 'sun_sim' && selectedSite && (
-            <SunOrbitSimulator
-              site={selectedSite}
-              siteData={siteData}
-              onBack={() => setActiveWindow('explorer')}
-            />
-          )}
-
-          {/* WINDOW 2b: Dedicated Sun + Earth Dual Celestial Simulator */}
+          {/* WINDOW 2: Dedicated Sun & Earth Celestial Simulator */}
           {activeWindow === 'celestial' && selectedSite && (
-            <CelestialSimulator
-              site={selectedSite}
-              siteData={siteData}
-              onBack={() => setActiveWindow('explorer')}
-            />
+            <div style={{ flex: 1, height: '100%', position: 'relative' }}>
+              <CelestialSimulator
+                site={selectedSite}
+                siteData={siteData}
+                onBack={() => setActiveWindow('explorer')}
+              />
+            </div>
           )}
 
-          {/* WINDOW 2c: 360 Degree Panoramic Horizon Skyline */}
+          {/* WINDOW 3: 360° Horizon Skyline */}
           {activeWindow === 'horizon' && selectedSite && (
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#050711' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', background: 'var(--color-bg)', overflow: 'hidden' }}>
               <div style={{
-                padding: '10px 18px',
-                background: '#070a18',
-                borderBottom: '1px solid rgba(255,255,255,0.08)',
+                padding: '12px 20px',
+                background: 'var(--color-surface)',
+                borderBottom: '1px solid var(--color-border)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                gap: '12px'
+                flexShrink: 0,
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <button
-                    onClick={() => setActiveWindow('explorer')}
-                    style={{
-                      background: 'rgba(255,255,255,0.06)',
-                      color: '#38bdf8',
-                      border: '1px solid rgba(56,189,248,0.3)',
-                      borderRadius: '6px',
-                      padding: '6px 12px',
-                      fontSize: '0.74rem',
-                      fontWeight: 600,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    ← Back to 3D Explorer
+                  <button onClick={() => setActiveWindow('explorer')} className="btn btn-secondary" style={{ padding: '5px 10px', fontSize: '12px' }}>
+                    <ChevronLeft size={14} />
+                    <span>Back to Explorer</span>
                   </button>
                   <div>
-                    <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#f8fafc' }}>
-                      🌅 360° Panoramic Horizon Skyline · {selectedSite.name}
-                    </div>
-                    <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
-                      LOLA DTM topographic silhouette with real-time Sun & Earth libration paths — drag the slider to scrub time
+                    <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      360° Panoramic Horizon Skyline · {selectedSite.name}
+                    </h2>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      LOLA DTM topographic silhouette with real-time Sun & Earth libration path intersection.
                     </div>
                   </div>
                 </div>
               </div>
-              <div style={{ flex: 1, padding: '16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+              <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <HorizonSkyline
                   siteData={siteData}
                   site={selectedSite}
                   currentStep={skylineStep}
                 />
 
-                {/* Standalone Time Scrubber for Skyline */}
+                {/* Scrubber Card */}
                 <div style={{
-                  background: 'rgba(7, 10, 24, 0.9)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: '8px',
-                  padding: '14px 18px',
+                  background: 'var(--color-panel)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-lg)',
+                  padding: '16px 20px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '8px'
+                  gap: '8px',
                 }}>
-                  <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, marginBottom: '2px' }}>
-                    ⏱ Time Scrubber — Drag to Animate Sun & Earth Movement Across the Skyline
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
+                      Time Scrubber — Animate Celestial Motion
+                    </span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--color-cyan)' }}>
+                      UTC: {siteData?.time_series?.times_utc?.[skylineStep]?.slice(0, 16).replace('T', ' ') || '—'}
+                    </span>
                   </div>
+
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontSize: '0.68rem', color: '#94a3b8', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>Day 0 · Apr 1</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>Apr 01</span>
                     <input
                       type="range"
                       min={0}
                       max={(siteData?.time_series?.times_utc?.length || 1) - 1}
                       value={skylineStep}
                       onChange={e => setSkylineStep(Number(e.target.value))}
-                      style={{ flex: 1, accentColor: '#38bdf8', cursor: 'pointer', height: '6px' }}
                     />
-                    <span style={{ fontSize: '0.68rem', color: '#94a3b8', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>Day 30 · May 1</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.66rem', color: '#475569', fontFamily: 'monospace' }}>
-                      Step {skylineStep + 1} of {siteData?.time_series?.times_utc?.length || '—'} ·
-                      UTC: {siteData?.time_series?.times_utc?.[skylineStep]?.slice(0,16).replace('T',' ') || '—'}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Libration Education Card */}
-                <div style={{
-                  background: 'rgba(15,23,42,0.6)',
-                  border: '1px solid rgba(56,189,248,0.2)',
-                  borderRadius: '8px',
-                  padding: '14px 18px',
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '16px',
-                  fontSize: '0.76rem',
-                  color: '#94a3b8'
-                }}>
-                  <div>
-                    <div style={{ color: '#38bdf8', fontWeight: 700, marginBottom: '5px', fontSize: '0.78rem' }}>
-                      🔵 What is the Earth Libration Loop?
-                    </div>
-                    <p style={{ margin: 0, lineHeight: 1.5 }}>
-                      Although the Moon is <strong>tidally locked</strong> to Earth, the Moon's slightly elliptical orbit and 5.14° orbital inclination cause Earth to appear to <strong>wobble</strong> in the lunar sky — tracing a small <strong>figure-8 pattern</strong> (Lissajous) of about ±7° over 27.3 days. For south polar sites, this loop can dip Earth below nearby crater ridges, causing temporary comms blackouts.
-                    </p>
-                  </div>
-                  <div>
-                    <div style={{ color: '#fbbf24', fontWeight: 700, marginBottom: '5px', fontSize: '0.78rem' }}>
-                      ☀️ Why Does the Sun Stay Low at the Poles?
-                    </div>
-                    <p style={{ margin: 0, lineHeight: 1.5 }}>
-                      The Moon's axial tilt is only <strong>1.54°</strong> — so the Sun never rises more than ≈1.5° above the horizon at the South Pole. It circles around 360° all month, neither setting nor rising high, creating those <strong>permanently lit ridges</strong> and deep <strong>permanently shadowed craters</strong> that might harbour ancient ice deposits.
-                    </p>
+                    <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>May 01</span>
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* WINDOW 3: Dedicated Illumination Timeline */}
+          {/* WINDOW 4: Illumination Timeline Panel */}
           {activeWindow === 'timeline' && selectedSite && (
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#050711' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', background: 'var(--color-bg)', overflow: 'hidden' }}>
               <div style={{
-                padding: '10px 18px',
-                background: '#070a18',
-                borderBottom: '1px solid rgba(255,255,255,0.08)',
+                padding: '12px 20px',
+                background: 'var(--color-surface)',
+                borderBottom: '1px solid var(--color-border)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px'
+                gap: '12px',
+                flexShrink: 0,
               }}>
-                <button
-                  onClick={() => setActiveWindow('explorer')}
-                  style={{
-                    background: 'rgba(255,255,255,0.06)',
-                    color: '#38bdf8',
-                    border: '1px solid rgba(56,189,248,0.3)',
-                    borderRadius: '6px',
-                    padding: '6px 12px',
-                    fontSize: '0.74rem',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  &larr; Back to 3D Explorer
+                <button onClick={() => setActiveWindow('explorer')} className="btn btn-secondary" style={{ padding: '5px 10px', fontSize: '12px' }}>
+                  <ChevronLeft size={14} />
+                  <span>Back to Explorer</span>
                 </button>
                 <div>
-                  <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#f8fafc' }}>
-                    📈 Illumination & Earth Line-of-Sight Timeline · {selectedSite.name}
-                  </div>
-                  <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
-                    Full 720-hour study interval (2026-04-01 to 2026-05-01) with sub-second transition bisection
+                  <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    Illumination & Earth Visibility Timeline · {selectedSite.name}
+                  </h2>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    720-hour study interval with sub-second bisection for eclipse transitions.
                   </div>
                 </div>
               </div>
-              <div style={{ flex: 1, padding: '16px', overflowY: 'auto' }}>
+
+              <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
                 <TimelinePanel siteData={siteData} site={selectedSite} />
               </div>
             </div>
           )}
 
-          {/* WINDOW 4: Dedicated Lander Battery Lab */}
+          {/* WINDOW 5: Lander Battery Simulation Lab */}
           {activeWindow === 'energy' && selectedSite && (
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#050711' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', background: 'var(--color-bg)', overflow: 'hidden' }}>
               <div style={{
-                padding: '10px 18px',
-                background: '#070a18',
-                borderBottom: '1px solid rgba(255,255,255,0.08)',
+                padding: '12px 20px',
+                background: 'var(--color-surface)',
+                borderBottom: '1px solid var(--color-border)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px'
+                gap: '12px',
+                flexShrink: 0,
               }}>
-                <button
-                  onClick={() => setActiveWindow('explorer')}
-                  style={{
-                    background: 'rgba(255,255,255,0.06)',
-                    color: '#38bdf8',
-                    border: '1px solid rgba(56,189,248,0.3)',
-                    borderRadius: '6px',
-                    padding: '6px 12px',
-                    fontSize: '0.74rem',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  &larr; Back to 3D Explorer
+                <button onClick={() => setActiveWindow('explorer')} className="btn btn-secondary" style={{ padding: '5px 10px', fontSize: '12px' }}>
+                  <ChevronLeft size={14} />
+                  <span>Back to Explorer</span>
                 </button>
                 <div>
-                  <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#f8fafc' }}>
-                    ⚡ Lander Power & Battery Simulation Lab · {selectedSite.name}
-                  </div>
-                  <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
-                    Simulating 2.5m² solar panel, 1200 Wh battery, 65W nominal lander load, and 20% SoC reserve threshold
+                  <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    Lander Power & Battery Simulation Lab · {selectedSite.name}
+                  </h2>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    2.5 m² solar array, 1,200 Wh battery capacity, 65 W nominal load, 20% reserve floor.
                   </div>
                 </div>
               </div>
-              <div style={{ flex: 1, padding: '16px', overflowY: 'auto' }}>
+
+              <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
                 <EnergyPanel siteData={siteData} site={selectedSite} />
               </div>
             </div>
           )}
 
-          {/* WINDOW 5: Dedicated NASA Cross-Check Matrix */}
+          {/* WINDOW 6: NASA Cross-Check Matrix */}
           {activeWindow === 'nasa' && (
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#050711' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', background: 'var(--color-bg)', overflow: 'hidden' }}>
               <div style={{
-                padding: '10px 18px',
-                background: '#070a18',
-                borderBottom: '1px solid rgba(255,255,255,0.08)',
+                padding: '12px 20px',
+                background: 'var(--color-surface)',
+                borderBottom: '1px solid var(--color-border)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px'
+                gap: '12px',
+                flexShrink: 0,
               }}>
-                <button
-                  onClick={() => setActiveWindow('explorer')}
-                  style={{
-                    background: 'rgba(255,255,255,0.06)',
-                    color: '#38bdf8',
-                    border: '1px solid rgba(56,189,248,0.3)',
-                    borderRadius: '6px',
-                    padding: '6px 12px',
-                    fontSize: '0.74rem',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  &larr; Back to 3D Explorer
+                <button onClick={() => setActiveWindow('explorer')} className="btn btn-secondary" style={{ padding: '5px 10px', fontSize: '12px' }}>
+                  <ChevronLeft size={14} />
+                  <span>Back to Explorer</span>
                 </button>
                 <div>
-                  <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#f8fafc' }}>
-                    🔬 NASA Scientific Literature Cross-Validation Matrix
-                  </div>
-                  <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>
-                    Comparing STELLARON SPICE calculations with Mazarico (2011), Gläser (2014), and Apollo mission reports
+                  <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    NASA Scientific Literature Cross-Validation Matrix
+                  </h2>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    Independent verification against Mazarico (2011), Gläser (2014), and Apollo mission surface reports.
                   </div>
                 </div>
               </div>
-              <div style={{ flex: 1, padding: '18px 24px', overflowY: 'auto' }}>
+
+              <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
                 <NasaCrossCheckPanel selectedSite={selectedSite} />
               </div>
             </div>
           )}
-          {/* WINDOW 6: Mission Rehearsal */}
+
+          {/* WINDOW 7: Mission Rehearsal & Flight Playback */}
           {activeWindow === 'rehearsal' && (
-            <MissionRehearsal sites={sites} />
+            <div style={{ flex: 1, height: '100%', overflow: 'hidden' }}>
+              <MissionRehearsal sites={sites} />
+            </div>
           )}
-        </main>
+        </div>
       </div>
     </div>
   )

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useEffect, useState } from 'react'
+﻿import { useMemo, useRef, useEffect, useState } from 'react'
 
 /**
  * HorizonSkyline
@@ -330,7 +330,7 @@ export default function HorizonSkyline({ siteData, site, currentStep }) {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#e2e8f0' }}>
-            🌅 360° Panoramic Horizon Skyline
+            360° Panoramic Horizon Skyline
           </span>
           <span style={{
             fontSize: '0.63rem',
@@ -355,7 +355,7 @@ export default function HorizonSkyline({ siteData, site, currentStep }) {
             color: liveSunVis ? '#fbbf24' : '#64748b',
             border: `1px solid ${liveSunVis ? 'rgba(251,191,36,0.4)' : 'rgba(100,116,139,0.2)'}`
           }}>
-            {liveSunVis ? '☀️ SUNLIT' : '🌑 SHADOW'}{liveSunEl !== null ? ` · ${liveSunEl.toFixed(1)}°` : ''}
+            {liveSunVis ? 'SUNLIT' : 'SHADOW'}{liveSunEl !== null ? ` · ${liveSunEl.toFixed(1)}°` : ''}
           </div>
           <div style={{
             padding: '2px 8px',
@@ -366,7 +366,7 @@ export default function HorizonSkyline({ siteData, site, currentStep }) {
             color: liveEarthVis ? '#38bdf8' : '#ef4444',
             border: `1px solid ${liveEarthVis ? 'rgba(56,189,248,0.4)' : 'rgba(239,68,68,0.3)'}`
           }}>
-            {liveEarthVis ? '📶 EARTH DTE' : '❌ EARTH OCCULTED'}{liveEarthEl !== null ? ` · ${liveEarthEl.toFixed(1)}°` : ''}
+            {liveEarthVis ? 'EARTH DTE' : 'EARTH OCCULTED'}{liveEarthEl !== null ? ` · ${liveEarthEl.toFixed(1)}°` : ''}
           </div>
           <div style={{ fontSize: '0.63rem', color: '#475569', fontFamily: 'monospace' }}>
             UTC {liveTime}

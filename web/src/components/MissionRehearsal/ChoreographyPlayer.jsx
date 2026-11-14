@@ -1,40 +1,40 @@
-/** ChoreographyPlayer.jsx — High-Fidelity 3D Mission Rehearsal & Solar Lighting Playback
+/** ChoreographyPlayer.jsx — Mission Control 3D Flight & Ridge Lighting Playback
  *
- * Physics-Driven Celestial & Terrain Simulation:
- * 1. Macro Flight & Lunar Orbit Mode ("flight"):
- *    - Real Earth globe (Blue Marble 2048) with rotating clouds and atmospheric limb
- *    - Real Moon globe with landing site beacon & exploration circle
- *    - True solar orientation & phase illumination across the lunar orbital plane
- *    - Flight trajectory ribbon linking Earth departure to Lunar Orbit Insertion (LOI)
- *    - Spacecraft with supersonic rocket plume shader
- *    - Live HUD tracking Reaching Orbit timestamp (LOI), PDI, and Touchdown
- *
- * 2. Landing Site Terrain Window ("ridge"):
- *    - Seamless automatic transition or manual toggle upon reaching lunar descent
- *    - High-resolution 3D LOLA DTM heightmesh for the selected site (e.g. Shackleton Ridge)
- *    - Marked Touchdown Footprint: Holographic target reticle (100m, 250m, 500m rings),
- *      vertical touchdown laser guidance beam, and 3D lunar lander on the ridge crest
- *    - Real Solar Lighting Logic: Directional sunlight driven by exact topocentric
- *      (sun_az_deg, sun_el_deg) from SPICE/LOLA ephemeris, casting dynamic real-time shadows
- *    - Sun body rendered low on the polar horizon with solar corona & occlusion indicator
- *    - Telemetry HUD: Sun Az/El, line-of-sight visibility, direct irradiance (W/m²),
- *      modelled battery state of charge (SoC), and verdict banner
- *
- * 3. Interactive What-If Delay / Slip Simulator:
- *    - Live scrubbing of arrival delays (+0d to +20d)
- *    - Visual demonstration of how slip shifts orbit arrival and moves the Sun behind crater rims,
- *      engulfing the touchdown zone in darkness and causing battery depletion
- *    - Pre-configured for all three demo presets (Demo A, Demo B, Demo C)
- *
- * Language: Strictly neutral scientific terminology (modelled, conditional on inputs).
- * Disclaimer: "Schematic phases are illustrative — not a trajectory design."
+ * Restyled with:
+ * - Full-bleed 3D scene with floating glass panels (12px margins)
+ * - Collapsible site detail card (max 320px wide, pinned top-left)
+ * - Segmented control for Flight vs Terrain inside viewport
+ * - Segmented control for camera angles bottom center
+ * - Slim playback bar at the bottom with Launch & Touchdown markers
+ * - Custom cyan slider for delay slip with mono readout
+ * - Lucide line icons throughout (zero emojis)
  */
 
-import { useState, useRef, useEffect, useMemo, Suspense, useCallback } from 'react'
+import { useState, useRef, useEffect, useMemo, Suspense } from 'react'
 import { Canvas, useFrame, useLoader } from '@react-three/fiber'
 import { OrbitControls, Stars, Html } from '@react-three/drei'
 import * as THREE from 'three'
-import { createPlumeMaterial, createTrailRibbonMaterial, createCommsPulseMaterial } from '../../shaders'
+import {
+  Play,
+  Pause,
+  Camera,
+  Compass,
+  Sun,
+  Battery,
+  Radio,
+  Eye,
+  EyeOff,
+  Layers,
+  Sliders,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  Mountain,
+  Rocket,
+} from 'lucide-react'
+import { createPlumeMaterial, createTrailRibbonMaterial } from '../../shaders'
 
 // ─── Canonical Landing Sites Metadata ─────────────────────────────────────────
 const SITE_METADATA = {
@@ -45,7 +45,6 @@ const SITE_METADATA = {
     lon_deg: 116.7,
     elevation_m: 1306,
     nominal_landing_utc: '2026-04-15T00:00:00Z',
-    sunlit_window: '2026-04-14 to 2026-04-25 (261h continuous sun)',
     tolerance_days: 9,
     failing_offset_days: 10,
     mesh_file: 'data/terrains/shackleton_connecting_ridge_mesh.json',
@@ -58,7 +57,6 @@ const SITE_METADATA = {
     lon_deg: 2.93,
     elevation_m: 5020,
     nominal_landing_utc: '2026-04-05T00:00:00Z',
-    sunlit_window: '2026-04-01 to 2026-04-08 (183h sun, then 406h shadow)',
     tolerance_days: 3,
     failing_offset_days: 4,
     mesh_file: 'data/terrains/malapert_mountain_mesh.json',
@@ -71,7 +69,6 @@ const SITE_METADATA = {
     lon_deg: 37.85,
     elevation_m: 1800,
     nominal_landing_utc: '2026-04-24T00:00:00Z',
-    sunlit_window: '2026-04-22 to 2026-05-01 (205h continuous sun)',
     tolerance_days: 7,
     failing_offset_days: 8,
     mesh_file: 'data/terrains/nobile_rim_1_mesh.json',
@@ -100,11 +97,11 @@ const SITE_METADATA = {
 }
 
 const PHASE_COLORS = {
-  PRELAUNCH_HOLD: '#64748b',
-  TRANSIT: '#38bdf8',
-  LUNAR_ORBIT: '#a78bfa',
-  DESCENT: '#fbbf24',
-  SURFACE: '#34d399',
+  PRELAUNCH_HOLD: '#6B7280',
+  TRANSIT: '#22D3EE',
+  LUNAR_ORBIT: '#93C5FD',
+  DESCENT: '#F59E0B',
+  SURFACE: '#10B981',
 }
 
 // ─── Hypsometric Tint Elevation Colormap (NASA LOLA Standard) ────────────────
@@ -140,7 +137,6 @@ function latLonToVec3(lat, lon, r = 1.0) {
 }
 
 // ─── Ephemeris Lookup Helper ──────────────────────────────────────────────────
-// Returns topocentric solar coordinates for any date, mapped into the synodic cycle
 function lookupSolarEphemeris(timeSeriesData, targetDate) {
   if (!timeSeriesData || !timeSeriesData.times_utc || timeSeriesData.times_utc.length === 0) {
     return { sunAzDeg: 90.0, sunElDeg: 1.2, sunVisible: true, earthAzDeg: 0, earthElDeg: 5, earthVisible: true }
@@ -153,7 +149,6 @@ function lookupSolarEphemeris(timeSeriesData, targetDate) {
 
   let targetMs = targetDate.getTime()
   if (targetMs < startDate || targetMs > endDate) {
-    // Modular wrap into the synodic lunar cycle (~29.530588 days)
     const synodicMs = 29.530588 * 86400 * 1000
     const offset = ((targetMs - startDate) % synodicMs + synodicMs) % synodicMs
     targetMs = startDate + (offset % spanMs)
@@ -188,11 +183,7 @@ function MacroSunObject({ position = [35.0, 16.0, 25.0], showLabels = true }) {
 
   return (
     <group position={position}>
-      <directionalLight
-        position={[0, 0, 0]}
-        intensity={2.8}
-        color="#fffcf0"
-      />
+      <directionalLight position={[0, 0, 0]} intensity={2.8} color="#fffcf0" />
       <pointLight color="#fff7ed" intensity={3.5} distance={120} decay={1} />
 
       <mesh>
@@ -201,15 +192,11 @@ function MacroSunObject({ position = [35.0, 16.0, 25.0], showLabels = true }) {
       </mesh>
       <mesh scale={[1.25, 1.25, 1.25]}>
         <sphereGeometry args={[1.4, 24, 24]} />
-        <meshBasicMaterial color="#fbbf24" transparent opacity={0.5} side={THREE.BackSide} />
+        <meshBasicMaterial color="#F59E0B" transparent opacity={0.4} side={THREE.BackSide} />
       </mesh>
       <mesh ref={flareRef} scale={[1.85, 1.85, 1.85]}>
         <sphereGeometry args={[1.4, 20, 20]} />
-        <meshBasicMaterial color="#f59e0b" transparent opacity={0.16} side={THREE.BackSide} />
-      </mesh>
-      <mesh rotation={[Math.PI / 4, Math.PI / 6, 0]}>
-        <ringGeometry args={[1.6, 3.2, 48]} />
-        <meshBasicMaterial color="#fef08a" transparent opacity={0.10} side={THREE.DoubleSide} />
+        <meshBasicMaterial color="#D97706" transparent opacity={0.12} side={THREE.BackSide} />
       </mesh>
 
       {showLabels && (
@@ -217,15 +204,16 @@ function MacroSunObject({ position = [35.0, 16.0, 25.0], showLabels = true }) {
           <div style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '11px',
-            fontWeight: 800,
-            background: 'rgba(251, 191, 36, 0.92)',
-            color: '#000',
+            fontWeight: 700,
+            background: 'rgba(17, 24, 39, 0.92)',
+            border: '1px solid rgba(245, 158, 11, 0.4)',
+            color: '#F59E0B',
             padding: '3px 8px',
             borderRadius: '4px',
-            boxShadow: '0 0 16px rgba(251,191,36,0.9)',
+            boxShadow: '0 0 14px rgba(245, 158, 11, 0.4)',
             whiteSpace: 'nowrap',
           }}>
-            ☀️ THE SUN · 1 AU (Solar Flux Source)
+            THE SUN · 1 AU (Solar Flux)
           </div>
         </Html>
       )}
@@ -261,7 +249,7 @@ function MacroEarthObject({ position = [0, 0, 0], showLabels = true }) {
       </mesh>
       <mesh scale={[1.15, 1.15, 1.15]}>
         <sphereGeometry args={[1.6, 32, 32]} />
-        <meshBasicMaterial color="#38bdf8" transparent opacity={0.12} side={THREE.BackSide} />
+        <meshBasicMaterial color="#22D3EE" transparent opacity={0.12} side={THREE.BackSide} />
       </mesh>
 
       {showLabels && (
@@ -270,13 +258,14 @@ function MacroEarthObject({ position = [0, 0, 0], showLabels = true }) {
             fontFamily: 'var(--font-mono)',
             fontSize: '11px',
             fontWeight: 700,
-            background: 'rgba(2, 132, 199, 0.90)',
-            color: '#fff',
+            background: 'rgba(17, 24, 39, 0.92)',
+            border: '1px solid rgba(34, 211, 238, 0.4)',
+            color: 'var(--color-cyan)',
             padding: '2px 8px',
             borderRadius: '4px',
             whiteSpace: 'nowrap',
           }}>
-            🌍 EARTH · Launch Origin & DTE Transceiver
+            EARTH · Launch Origin & DTE Transceiver
           </div>
         </Html>
       )}
@@ -310,25 +299,19 @@ function MacroMoonObject({ position = [16.0, 3.0, -4.5], site, showLabels = true
         <meshStandardMaterial map={moonTexture} roughness={0.92} metalness={0.05} />
       </mesh>
 
-      {/* Lunar South Pole Exploration Zone Ring */}
-      <mesh position={[0, -moonRadius * 0.995, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.07, 0.08, 36]} />
-        <meshBasicMaterial color="#fbbf24" transparent opacity={0.4} side={THREE.DoubleSide} />
-      </mesh>
-
       {/* Target Site Surface Beacon */}
       <group position={siteRelPos}>
         <mesh ref={targetRingRef}>
           <ringGeometry args={[0.03, 0.045, 24]} />
-          <meshBasicMaterial color="#38bdf8" transparent opacity={0.85} side={THREE.DoubleSide} />
+          <meshBasicMaterial color="#22D3EE" transparent opacity={0.85} side={THREE.DoubleSide} />
         </mesh>
         <mesh>
           <sphereGeometry args={[0.016, 16, 16]} />
-          <meshBasicMaterial color="#fbbf24" />
+          <meshBasicMaterial color="#22D3EE" />
         </mesh>
         <mesh position={[0, 0.25, 0]}>
           <cylinderGeometry args={[0.003, 0.003, 0.5, 8]} />
-          <meshBasicMaterial color="#38bdf8" transparent opacity={0.7} />
+          <meshBasicMaterial color="#22D3EE" transparent opacity={0.7} />
         </mesh>
 
         {showLabels && (
@@ -336,17 +319,17 @@ function MacroMoonObject({ position = [16.0, 3.0, -4.5], site, showLabels = true
             <div style={{
               fontFamily: 'var(--font-mono)',
               fontSize: '10px',
-              fontWeight: 800,
-              background: 'rgba(6, 11, 25, 0.95)',
-              border: '1px solid #38bdf8',
-              color: '#38bdf8',
+              fontWeight: 700,
+              background: 'rgba(17, 24, 39, 0.94)',
+              border: '1px solid var(--color-cyan-border)',
+              color: 'var(--color-cyan)',
               padding: '3px 8px',
-              borderRadius: '5px',
-              boxShadow: '0 0 14px rgba(56,189,248,0.7)',
+              borderRadius: '4px',
+              boxShadow: '0 0 12px rgba(34, 211, 238, 0.35)',
               whiteSpace: 'nowrap',
             }}>
-              <div>🎯 TARGET LANDING SITE</div>
-              <div style={{ color: '#f8fafc', fontWeight: 700 }}>{site?.name}</div>
+              <div>TARGET LANDING SITE</div>
+              <div style={{ color: '#F9FAFB' }}>{site?.name}</div>
             </div>
           </Html>
         )}
@@ -358,13 +341,14 @@ function MacroMoonObject({ position = [16.0, 3.0, -4.5], site, showLabels = true
             fontFamily: 'var(--font-mono)',
             fontSize: '11px',
             fontWeight: 700,
-            background: 'rgba(100, 116, 139, 0.85)',
-            color: '#fff',
+            background: 'rgba(17, 24, 39, 0.9)',
+            border: '1px solid var(--color-border)',
+            color: 'var(--text-secondary)',
             padding: '2px 8px',
             borderRadius: '4px',
             whiteSpace: 'nowrap',
           }}>
-            🌕 THE MOON · Target Body
+            THE MOON · Target Body
           </div>
         </Html>
       )}
@@ -386,36 +370,36 @@ function SpacecraftMarker({ position, thrustActive, qualityTier, scale = 1.0 }) 
 
   return (
     <group position={position} scale={[scale, scale, scale]}>
-      {/* Octagonal Lander Body with MLI golden foil */}
+      {/* Octagonal Lander Body with MLI gold foil */}
       <mesh castShadow receiveShadow>
         <cylinderGeometry args={[0.22, 0.28, 0.35, 8]} />
-        <meshStandardMaterial color="#fbbf24" metalness={0.9} roughness={0.25} />
+        <meshStandardMaterial color="#F59E0B" metalness={0.85} roughness={0.25} />
       </mesh>
       {/* Avionics Deck */}
       <mesh position={[0, 0.20, 0]} castShadow>
         <cylinderGeometry args={[0.18, 0.20, 0.08, 8]} />
-        <meshStandardMaterial color="#cbd5e1" metalness={0.8} roughness={0.2} />
+        <meshStandardMaterial color="#9CA3AF" metalness={0.7} roughness={0.2} />
       </mesh>
       {/* High-Gain Antenna */}
       <mesh position={[0, 0.32, 0]} rotation={[0.4, 0, 0]}>
         <coneGeometry args={[0.12, 0.06, 16, 1, true]} />
-        <meshStandardMaterial color="#f8fafc" metalness={0.5} roughness={0.3} side={THREE.DoubleSide} />
+        <meshStandardMaterial color="#F9FAFB" metalness={0.5} roughness={0.3} side={THREE.DoubleSide} />
       </mesh>
       {/* Deployable Solar Panels */}
       <mesh position={[0.42, 0, 0]} rotation={[0, 0.2, 0]} castShadow>
         <boxGeometry args={[0.45, 0.02, 0.26]} />
-        <meshStandardMaterial color="#0284c7" metalness={0.85} roughness={0.15} />
+        <meshStandardMaterial color="#0284C7" metalness={0.8} roughness={0.15} />
       </mesh>
       <mesh position={[-0.42, 0, 0]} rotation={[0, -0.2, 0]} castShadow>
         <boxGeometry args={[0.45, 0.02, 0.26]} />
-        <meshStandardMaterial color="#0284c7" metalness={0.85} roughness={0.15} />
+        <meshStandardMaterial color="#0284C7" metalness={0.8} roughness={0.15} />
       </mesh>
       {/* Landing Struts */}
       {[0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2].map((angle, idx) => (
         <group key={idx} rotation={[0, angle, 0]}>
           <mesh position={[0.22, -0.22, 0]} rotation={[0, 0, -0.45]} castShadow>
             <cylinderGeometry args={[0.012, 0.012, 0.24, 8]} />
-            <meshStandardMaterial color="#94a3b8" metalness={0.8} roughness={0.3} />
+            <meshStandardMaterial color="#6B7280" metalness={0.8} roughness={0.3} />
           </mesh>
         </group>
       ))}
@@ -432,8 +416,8 @@ function SpacecraftMarker({ position, thrustActive, qualityTier, scale = 1.0 }) 
 }
 
 // ─── 5. Trajectory Ribbon ─────────────────────────────────────────────────────
-function TrajectoryRibbon({ points, phase, qualityTier }) {
-  const colorHex = PHASE_COLORS[phase] || '#38bdf8'
+function TrajectoryRibbon({ points, phase }) {
+  const colorHex = PHASE_COLORS[phase] || '#22D3EE'
   const lineGeo = useMemo(() => {
     const geo = new THREE.BufferGeometry()
     if (points.length < 2) return geo
@@ -466,7 +450,7 @@ function TopographicRidgeMesh({ meshData, renderMode, onCenterComputed }) {
     }
 
     const geo = new THREE.PlaneGeometry(6.5, 6.5, cols - 1, rows - 1)
-    geo.rotateX(-Math.PI / 2) // Orient plane horizontally in X-Z
+    geo.rotateX(-Math.PI / 2)
 
     const positions = geo.attributes.position.array
     const minH = Math.min(...heightsFlat)
@@ -482,7 +466,7 @@ function TopographicRidgeMesh({ meshData, renderMode, onCenterComputed }) {
     for (let i = 0; i < heightsFlat.length; i++) {
       const h = heightsFlat[i]
       const norm = (h - minH) / span
-      positions[i * 3 + 1] = norm * 1.6 // Vertical exaggeration for ridge crest clarity
+      positions[i * 3 + 1] = norm * 1.6
 
       if (renderMode === 'elevation') {
         const c = getElevationColor(norm)
@@ -490,7 +474,6 @@ function TopographicRidgeMesh({ meshData, renderMode, onCenterComputed }) {
         colorArr[i * 3 + 1] = c.g
         colorArr[i * 3 + 2] = c.b
       } else {
-        // Photorealistic lunar regolith with micro-contrast
         const brightness = 0.28 + norm * 0.42
         colorArr[i * 3] = brightness
         colorArr[i * 3 + 1] = brightness * 0.98
@@ -547,7 +530,7 @@ function TouchdownFootprintMarker({ centerElevation, site, sunVisible, batterySo
         <mesh ref={innerRingRef}>
           <ringGeometry args={[0.22, 0.26, 32]} />
           <meshBasicMaterial
-            color={sunVisible ? '#38bdf8' : '#ef4444'}
+            color={sunVisible ? '#22D3EE' : '#EF4444'}
             transparent
             opacity={0.9}
             side={THREE.DoubleSide}
@@ -557,7 +540,7 @@ function TouchdownFootprintMarker({ centerElevation, site, sunVisible, batterySo
         <mesh ref={outerRingRef}>
           <ringGeometry args={[0.42, 0.46, 36]} />
           <meshBasicMaterial
-            color={sunVisible ? '#fbbf24' : '#b91c1c'}
+            color={sunVisible ? '#F59E0B' : '#EF4444'}
             transparent
             opacity={0.65}
             side={THREE.DoubleSide}
@@ -566,12 +549,12 @@ function TouchdownFootprintMarker({ centerElevation, site, sunVisible, batterySo
         {/* Outer 500m Approach Perimeter */}
         <mesh>
           <ringGeometry args={[0.80, 0.82, 48]} />
-          <meshBasicMaterial color="#64748b" transparent opacity={0.4} side={THREE.DoubleSide} />
+          <meshBasicMaterial color="#6B7280" transparent opacity={0.4} side={THREE.DoubleSide} />
         </mesh>
         {/* Touchdown Center Spot */}
         <mesh>
           <circleGeometry args={[0.06, 16]} />
-          <meshBasicMaterial color={sunVisible ? '#38bdf8' : '#ef4444'} />
+          <meshBasicMaterial color={sunVisible ? '#22D3EE' : '#EF4444'} />
         </mesh>
       </group>
 
@@ -579,13 +562,13 @@ function TouchdownFootprintMarker({ centerElevation, site, sunVisible, batterySo
       <mesh position={[0, 1.25, 0]}>
         <cylinderGeometry args={[0.008, 0.008, 2.5, 12]} />
         <meshBasicMaterial
-          color={sunVisible ? '#38bdf8' : '#ef4444'}
+          color={sunVisible ? '#22D3EE' : '#EF4444'}
           transparent
           opacity={0.75}
         />
       </mesh>
 
-      {/* 3D Lunar Lander resting directly in the center of the marked portion */}
+      {/* 3D Lunar Lander resting directly on touchdown point */}
       <group position={[0, 0.16, 0]}>
         <SpacecraftMarker position={[0, 0, 0]} thrustActive={false} scale={0.45} />
       </group>
@@ -593,28 +576,29 @@ function TouchdownFootprintMarker({ centerElevation, site, sunVisible, batterySo
       {/* Floating 3D Target Reticle Badge */}
       <Html distanceFactor={6} position={[0, 0.65, 0]} center style={{ pointerEvents: 'none' }}>
         <div style={{
-          background: 'rgba(6, 11, 25, 0.94)',
-          border: `1px solid ${sunVisible ? '#38bdf8' : '#ef4444'}`,
-          borderRadius: '6px',
-          padding: '5px 10px',
-          color: '#f8fafc',
-          fontSize: '10px',
+          background: 'rgba(17, 24, 39, 0.94)',
+          backdropFilter: 'blur(8px)',
+          border: `1px solid ${sunVisible ? 'var(--color-cyan-border)' : 'var(--color-hazard-border)'}`,
+          borderRadius: 'var(--radius-sm)',
+          padding: '6px 10px',
+          color: '#F9FAFB',
+          fontSize: '11px',
           fontFamily: 'var(--font-mono)',
-          boxShadow: `0 0 16px ${sunVisible ? 'rgba(56,189,248,0.7)' : 'rgba(239,68,68,0.7)'}`,
+          boxShadow: `0 0 16px ${sunVisible ? 'rgba(34,211,238,0.4)' : 'rgba(239,68,68,0.4)'}`,
           whiteSpace: 'nowrap',
           textAlign: 'center',
           lineHeight: 1.35,
         }}>
-          <div style={{ fontWeight: 800, color: sunVisible ? '#38bdf8' : '#ef4444', letterSpacing: '0.04em' }}>
-            🎯 MARKED TOUCHDOWN FOOTPRINT
+          <div style={{ fontWeight: 800, color: sunVisible ? 'var(--color-cyan)' : 'var(--color-hazard)', letterSpacing: '0.04em' }}>
+            MARKED TOUCHDOWN FOOTPRINT
           </div>
-          <div style={{ fontSize: '9px', color: '#cbd5e1' }}>
+          <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
             {site?.name} · Elev: {site?.elevation_m ?? 1306}m
           </div>
-          <div style={{ fontSize: '9px', fontWeight: 700, marginTop: '2px', color: sunVisible ? '#34d399' : '#f87171' }}>
+          <div style={{ fontSize: '10px', fontWeight: 700, marginTop: '2px', color: sunVisible ? 'var(--color-safe)' : 'var(--color-hazard)' }}>
             {sunVisible
-              ? `☀️ FULL SUNLIGHT · SOC ${(batterySoc * 100).toFixed(0)}%`
-              : `🌑 CRATER SHADOW · TOUCHDOWN HAZARD`}
+              ? `FULL SUNLIGHT · ${(batterySoc * 100).toFixed(0)}% SOC`
+              : `CRATER SHADOW · TOUCHDOWN HAZARD`}
           </div>
         </div>
       </Html>
@@ -624,9 +608,6 @@ function TouchdownFootprintMarker({ centerElevation, site, sunVisible, batterySo
 
 // ─── 8. Physical Topocentric Sun Object & Directional Shadow Caster ────────────
 function PhysicalTopocentricSun({ sunAzDeg, sunElDeg, sunVisible, centerElevation }) {
-  // Convert topocentric Azimuth & Elevation to 3D Cartesian coordinates
-  // North = -Z (Az = 0°), East = +X (Az = 90°), South = +Z (Az = 180°), West = -X (Az = 270°)
-  // Up = +Y (El > 0°)
   const distance = 16.0
   const elRad = (sunElDeg * Math.PI) / 180.0
   const azRad = (sunAzDeg * Math.PI) / 180.0
@@ -646,7 +627,7 @@ function PhysicalTopocentricSun({ sunAzDeg, sunElDeg, sunVisible, centerElevatio
     <>
       <primitive object={targetObjRef.current} />
 
-      {/* Directional Sun Light Casting Real Physical Shadows Across the Ridge */}
+      {/* Directional Sun Light Casting Real Physical Shadows */}
       <directionalLight
         ref={sunLightRef}
         position={[sunX, sunY, sunZ]}
@@ -665,38 +646,37 @@ function PhysicalTopocentricSun({ sunAzDeg, sunElDeg, sunVisible, centerElevatio
         shadow-bias={-0.0005}
       />
 
-      {/* Ambient fill (Low intensity, matching deep space contrast) */}
-      <ambientLight intensity={sunVisible ? 0.08 : 0.02} color="#94a3b8" />
+      <ambientLight intensity={sunVisible ? 0.08 : 0.02} color="#94A3B8" />
 
       {/* 3D Sun Sphere Visible Low on the Polar Horizon */}
       <group position={[sunX, sunY, sunZ]}>
         <mesh>
           <sphereGeometry args={[0.55, 32, 32]} />
-          <meshBasicMaterial color={sunVisible ? '#fffef0' : '#64748b'} />
+          <meshBasicMaterial color={sunVisible ? '#fffef0' : '#6B7280'} />
         </mesh>
         {sunVisible && (
           <mesh scale={[1.4, 1.4, 1.4]}>
             <sphereGeometry args={[0.55, 24, 24]} />
-            <meshBasicMaterial color="#fbbf24" transparent opacity={0.4} side={THREE.BackSide} />
+            <meshBasicMaterial color="#F59E0B" transparent opacity={0.35} side={THREE.BackSide} />
           </mesh>
         )}
 
-        {/* Horizon Sun Indicator Tag */}
         <Html distanceFactor={14} position={[0, 0.9, 0]} center style={{ pointerEvents: 'none' }}>
           <div style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '10px',
             fontWeight: 800,
-            background: sunVisible ? 'rgba(251,191,36,0.95)' : 'rgba(239,68,68,0.92)',
-            color: sunVisible ? '#000' : '#fff',
+            background: sunVisible ? 'rgba(17, 24, 39, 0.92)' : 'rgba(239, 68, 68, 0.92)',
+            border: `1px solid ${sunVisible ? 'var(--color-caution-border)' : 'var(--color-hazard-border)'}`,
+            color: sunVisible ? '#F59E0B' : '#FFFFFF',
             padding: '2px 8px',
             borderRadius: '4px',
-            boxShadow: `0 0 12px ${sunVisible ? 'rgba(251,191,36,0.8)' : 'rgba(239,68,68,0.7)'}`,
+            boxShadow: `0 0 12px ${sunVisible ? 'rgba(245,158,11,0.4)' : 'rgba(239,68,68,0.4)'}`,
             whiteSpace: 'nowrap',
           }}>
             {sunVisible
-              ? `☀️ THE SUN (Az: ${sunAzDeg.toFixed(1)}° · El: ${sunElDeg.toFixed(2)}°)`
-              : `🌑 OCCLUDED (Behind Ridge Crest · El: ${sunElDeg.toFixed(2)}°)`}
+              ? `THE SUN (Az: ${sunAzDeg.toFixed(1)}° · El: ${sunElDeg.toFixed(2)}°)`
+              : `OCCLUDED (Behind Ridge · El: ${sunElDeg.toFixed(2)}°)`}
           </div>
         </Html>
       </group>
@@ -710,23 +690,23 @@ function CompassMarkers() {
   return (
     <group position={[0, 0.08, 0]}>
       <Html distanceFactor={8} position={[0, 0, -radius]} center>
-        <div style={{ color: '#38bdf8', fontSize: '10px', fontWeight: 800, fontFamily: 'monospace' }}>
-          ▲ NORTH (0°)
+        <div style={{ color: 'var(--color-cyan)', fontSize: '10px', fontWeight: 800, fontFamily: 'monospace' }}>
+          NORTH (0°)
         </div>
       </Html>
       <Html distanceFactor={8} position={[0, 0, radius]} center>
-        <div style={{ color: '#fbbf24', fontSize: '10px', fontWeight: 800, fontFamily: 'monospace' }}>
-          ▼ SOUTH (Pole)
+        <div style={{ color: 'var(--color-caution)', fontSize: '10px', fontWeight: 800, fontFamily: 'monospace' }}>
+          SOUTH (Pole)
         </div>
       </Html>
       <Html distanceFactor={8} position={[radius, 0, 0]} center>
-        <div style={{ color: '#94a3b8', fontSize: '10px', fontWeight: 700, fontFamily: 'monospace' }}>
-          ▶ EAST (90°)
+        <div style={{ color: 'var(--text-tertiary)', fontSize: '10px', fontWeight: 700, fontFamily: 'monospace' }}>
+          EAST (90°)
         </div>
       </Html>
       <Html distanceFactor={8} position={[-radius, 0, 0]} center>
-        <div style={{ color: '#94a3b8', fontSize: '10px', fontWeight: 700, fontFamily: 'monospace' }}>
-          ◀ WEST (270°)
+        <div style={{ color: 'var(--text-tertiary)', fontSize: '10px', fontWeight: 700, fontFamily: 'monospace' }}>
+          WEST (270°)
         </div>
       </Html>
     </group>
@@ -791,11 +771,10 @@ function generateAdaptedFrames(site, plan, delaySlipDays) {
   const surfaceDays = Number(plan?.surface_days ?? 14.0)
 
   const launchBase = new Date(plan?.launch_utc || '2026-04-10T00:00:00Z')
-  // Delay slip shifts the timeline forward
   const effectiveLaunch = new Date(launchBase.getTime() + delaySlipDays * 86400000)
   const loiDate = new Date(effectiveLaunch.getTime() + transitDays * 86400000)
   const pdiDate = new Date(loiDate.getTime() + orbitDays * 86400000)
-  const landingDate = new Date(pdiDate.getTime() + 2 * 3600000) // 2h descent
+  const landingDate = new Date(pdiDate.getTime() + 2 * 3600000)
   const surfaceEndDate = new Date(landingDate.getTime() + surfaceDays * 86400000)
 
   const totalSteps = 120
@@ -920,31 +899,28 @@ export default function ChoreographyPlayer({
   plan,
   siteId = 'shackleton_connecting_ridge',
   siteName,
-  timeline,
-  surfaceMetrics,
   qualityTier = 'High',
-  onQualityChange,
   activeDemo,
   onSelectDemo,
 }) {
-  // 1. Landing Site Selection
   const site = useMemo(() => {
     return SITE_METADATA[siteId] || SITE_METADATA['shackleton_connecting_ridge']
   }, [siteId])
 
-  // 2. Interactive Delay / Mission Slip State
+  // Interactive Delay / View Mode State
   const [delaySlipDays, setDelaySlipDays] = useState(0)
   const [viewMode, setViewMode] = useState('ridge') // 'flight' | 'ridge'
   const [terrainRenderMode, setTerrainRenderMode] = useState('elevation') // 'elevation' | 'regolith'
   const [ridgeCameraPreset, setRidgeCameraPreset] = useState('oblique') // 'oblique' | 'target' | 'horizon' | 'polar'
   const [showLabels, setShowLabels] = useState(true)
+  const [isSiteCardExpanded, setIsSiteCardExpanded] = useState(false)
 
-  // 3. Playback Animation State
+  // Playback Animation State
   const [currentStep, setCurrentStep] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [playSpeed, setPlaySpeed] = useState(1)
 
-  // 4. Terrain DTM Mesh & Time-Series Ephemeris Data State
+  // Topographic & Ephemeris Data State
   const [meshData, setMeshData] = useState(null)
   const [timeSeriesData, setTimeSeriesData] = useState(null)
   const [centerElevation, setCenterElevation] = useState(0.6)
@@ -958,7 +934,6 @@ export default function ChoreographyPlayer({
         if (data) setMeshData(data)
       })
       .catch(() => {
-        // Fallback to hero_terrains
         fetch(`/data/hero_terrains/${site.id}_mesh.json`)
           .then(r => (r.ok ? r.json() : null))
           .then(data => data && setMeshData(data))
@@ -977,20 +952,19 @@ export default function ChoreographyPlayer({
       .catch(() => {})
   }, [site.id, site.time_series_file])
 
-  // Generate Trajectory Frames Adapted to Selected Coordinates and Delay Slip
+  // Trajectory Frames
   const { frames, milestones } = useMemo(() => {
     return generateAdaptedFrames(site, plan, delaySlipDays)
   }, [site, plan, delaySlipDays])
 
   const curFrame = frames[currentStep] || frames[0]
 
-  // Playback timer
+  // Playback Timer with automatic transition to ridge at descent
   useEffect(() => {
     if (!isPlaying) return
     const interval = setInterval(() => {
       setCurrentStep(prev => {
         const next = prev >= frames.length - 1 ? 0 : prev + 1
-        // Auto-transition to Ridge window upon reaching descent
         if (viewMode === 'flight' && next >= 92) {
           setViewMode('ridge')
         }
@@ -1000,12 +974,12 @@ export default function ChoreographyPlayer({
     return () => clearInterval(interval)
   }, [isPlaying, playSpeed, frames.length, viewMode])
 
-  // Calculate Real Physical Solar Position at Touchdown (Conditional on Delay Slip)
+  // Solar Ephemeris at Touchdown
   const solarEphemeris = useMemo(() => {
     return lookupSolarEphemeris(timeSeriesData, milestones.landingDate)
   }, [timeSeriesData, milestones.landingDate])
 
-  // Compute Modelled Battery State of Charge (SoC) & Verdict
+  // Verdict & Power Evaluation
   const { verdict, minSoc, verdictNote } = useMemo(() => {
     const tol = site.tolerance_days ?? 7
     if (delaySlipDays > tol + 1 || !solarEphemeris.sunVisible) {
@@ -1018,13 +992,13 @@ export default function ChoreographyPlayer({
       return {
         verdict: 'MARGINAL',
         minSoc: 0.24,
-        verdictNote: 'Tight solar margin. Grazing terrain elevation causes partial shadow or low reserve.',
+        verdictNote: 'Tight solar margin. Grazing terrain elevation causes low battery buffer.',
       }
     } else {
       return {
         verdict: 'SURVIVES',
         minSoc: 0.55,
-        verdictNote: 'Modelled continuous solar illumination on ridge crest maintains battery above 50%.',
+        verdictNote: 'Continuous solar illumination on ridge crest maintains battery above 50%.',
       }
     }
   }, [delaySlipDays, site.tolerance_days, solarEphemeris.sunVisible])
@@ -1034,14 +1008,14 @@ export default function ChoreographyPlayer({
   }, [frames, currentStep])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#050711', position: 'relative' }}>
-      {/* ── Top Header Bar: Mode Switcher, Quick Demos & Quality Tier ── */}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--color-bg)', position: 'relative', overflow: 'hidden' }}>
+      {/* ── Top Bar inside Viewport: View Segmented Control + Ghost Toggles (12px margins) ── */}
       <div style={{
         position: 'absolute',
-        top: 10,
+        top: 12,
         left: 12,
         right: 12,
-        zIndex: 15,
+        zIndex: 20,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -1049,74 +1023,33 @@ export default function ChoreographyPlayer({
         gap: '8px',
         pointerEvents: 'none',
       }}>
-        {/* Left: View Mode Toggle */}
-        <div style={{
-          display: 'flex',
-          gap: '6px',
-          background: 'rgba(7, 10, 24, 0.94)',
-          backdropFilter: 'blur(8px)',
-          padding: '4px 6px',
-          borderRadius: '7px',
-          border: '1px solid rgba(255,255,255,0.12)',
-          pointerEvents: 'auto',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.6)',
-        }}>
+        {/* Left: View Mode Segmented Control */}
+        <div className="segmented-control" style={{ pointerEvents: 'auto', background: 'var(--color-panel-glass)', backdropFilter: 'blur(8px)' }}>
           <button
             onClick={() => setViewMode('flight')}
-            style={{
-              background: viewMode === 'flight' ? '#0284c7' : 'transparent',
-              color: viewMode === 'flight' ? '#fff' : '#94a3b8',
-              border: viewMode === 'flight' ? '1px solid #38bdf8' : '1px solid transparent',
-              borderRadius: '5px',
-              padding: '5px 12px',
-              fontSize: '0.70rem',
-              fontWeight: 800,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
+            className={`segmented-item ${viewMode === 'flight' ? 'active' : ''}`}
           >
-            <span>🚀</span> Flight & Orbit Playback
+            <Rocket size={14} strokeWidth={1.5} />
+            <span>Flight & Orbit</span>
           </button>
           <button
             onClick={() => setViewMode('ridge')}
-            style={{
-              background: viewMode === 'ridge' ? '#0284c7' : 'transparent',
-              color: viewMode === 'ridge' ? '#fff' : '#94a3b8',
-              border: viewMode === 'ridge' ? '1px solid #38bdf8' : '1px solid transparent',
-              borderRadius: '5px',
-              padding: '5px 12px',
-              fontSize: '0.70rem',
-              fontWeight: 800,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
+            className={`segmented-item ${viewMode === 'ridge' ? 'active' : ''}`}
           >
-            <span>⛰</span> Landing Ridge Terrain & Solar Lighting
+            <Mountain size={14} strokeWidth={1.5} />
+            <span>Landing Ridge Window</span>
           </button>
         </div>
 
-        {/* Center: Demo Preset Selectors */}
-        <div style={{
-          display: 'flex',
-          gap: '4px',
-          background: 'rgba(7, 10, 24, 0.94)',
-          backdropFilter: 'blur(8px)',
-          padding: '4px 6px',
-          borderRadius: '7px',
-          border: '1px solid rgba(255,255,255,0.12)',
-          pointerEvents: 'auto',
-        }}>
-          <span style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 800, alignSelf: 'center', padding: '0 4px' }}>
-            DEMO PRESET:
+        {/* Center: Demo Preset Segmented Control */}
+        <div className="segmented-control" style={{ pointerEvents: 'auto', background: 'var(--color-panel-glass)', backdropFilter: 'blur(8px)' }}>
+          <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 700, padding: '0 6px' }}>
+            DEMO:
           </span>
           {[
-            { id: 'A', siteId: 'shackleton_connecting_ridge', label: 'Demo A (Shackleton)', defaultSlip: 0 },
-            { id: 'B', siteId: 'malapert_mountain', label: 'Demo B (Malapert)', defaultSlip: 0 },
-            { id: 'C', siteId: 'nobile_rim_1', label: 'Demo C (Nobile Rim)', defaultSlip: 3 },
+            { id: 'A', siteId: 'shackleton_connecting_ridge', label: 'Demo A', defaultSlip: 0 },
+            { id: 'B', siteId: 'malapert_mountain', label: 'Demo B', defaultSlip: 0 },
+            { id: 'C', siteId: 'nobile_rim_1', label: 'Demo C', defaultSlip: 3 },
           ].map(d => {
             const isMatch = activeDemo === d.id || siteId === d.siteId
             return (
@@ -1126,16 +1059,7 @@ export default function ChoreographyPlayer({
                   if (onSelectDemo) onSelectDemo(d.id)
                   setDelaySlipDays(d.defaultSlip)
                 }}
-                style={{
-                  background: isMatch ? 'rgba(56,189,248,0.22)' : 'transparent',
-                  color: isMatch ? '#38bdf8' : '#cbd5e1',
-                  border: isMatch ? '1px solid #38bdf8' : '1px solid transparent',
-                  borderRadius: '4px',
-                  padding: '3px 8px',
-                  fontSize: '0.66rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
+                className={`segmented-item ${isMatch ? 'active' : ''}`}
               >
                 {d.label}
               </button>
@@ -1143,327 +1067,249 @@ export default function ChoreographyPlayer({
           })}
         </div>
 
-        {/* Right: UI Toggles & Quality */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          background: 'rgba(7, 10, 24, 0.94)',
-          backdropFilter: 'blur(8px)',
-          padding: '4px 8px',
-          borderRadius: '7px',
-          border: '1px solid rgba(255,255,255,0.12)',
-          pointerEvents: 'auto',
-        }}>
+        {/* Right: Labels & Shading Ghost Toggles */}
+        <div style={{ display: 'flex', gap: '6px', pointerEvents: 'auto' }}>
           <button
             onClick={() => setShowLabels(!showLabels)}
-            style={{
-              background: showLabels ? 'rgba(56,189,248,0.2)' : 'transparent',
-              border: '1px solid rgba(56,189,248,0.3)',
-              color: showLabels ? '#38bdf8' : '#64748b',
-              borderRadius: '4px',
-              padding: '2px 8px',
-              fontSize: '0.64rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
+            className="btn btn-secondary"
+            style={{ padding: '5px 10px', fontSize: '12px' }}
           >
-            {showLabels ? '🏷 Labels: ON' : '🏷 Labels: OFF'}
+            {showLabels ? <Eye size={13} strokeWidth={1.5} /> : <EyeOff size={13} strokeWidth={1.5} />}
+            <span>{showLabels ? 'Labels' : 'No Labels'}</span>
           </button>
+
           {viewMode === 'ridge' && (
             <button
               onClick={() => setTerrainRenderMode(m => (m === 'elevation' ? 'regolith' : 'elevation'))}
-              style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                color: '#e2e8f0',
-                borderRadius: '4px',
-                padding: '2px 8px',
-                fontSize: '0.64rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
+              className="btn btn-secondary"
+              style={{ padding: '5px 10px', fontSize: '12px' }}
             >
-              {terrainRenderMode === 'elevation' ? '🎨 Mode: Hypsometric' : '🌕 Mode: Regolith'}
+              <Layers size={13} strokeWidth={1.5} />
+              <span>{terrainRenderMode === 'elevation' ? 'Hypsometric' : 'Regolith'}</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* ── Top-Left Floating Flight & Solar Telemetry Card ── */}
+      {/* ── Collapsible Site Detail Card (Pinned Top-Left, Max 320px Wide) ── */}
       <div style={{
         position: 'absolute',
-        top: 60,
+        top: 56,
         left: 12,
-        zIndex: 10,
-        background: 'rgba(6,11,25,0.94)',
-        backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255,255,255,0.10)',
-        borderRadius: '8px',
-        padding: '12px 14px',
+        zIndex: 15,
+        width: '320px',
+        maxWidth: 'calc(100vw - 24px)',
+        background: 'var(--color-panel-glass)',
+        backdropFilter: 'blur(8px)',
+        border: '1px solid var(--color-border)',
+        borderRadius: 'var(--radius-lg)',
+        padding: '14px 16px',
+        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
         display: 'flex',
         flexDirection: 'column',
         gap: '8px',
-        width: '320px',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
       }}>
-        {/* Title & Phase */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '6px' }}>
-          <div>
-            <div style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              {viewMode === 'flight' ? 'Flight Rehearsal Telemetry' : 'LOLA Ridge Lighting & Power Logic'}
-            </div>
-            <div style={{ fontSize: '0.80rem', fontWeight: 800, color: '#f8fafc' }}>
+        {/* Header: Site Name + PASS/FAIL Chip + Collapse Toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {site?.name}
-            </div>
-          </div>
-          <span style={{
-            fontSize: '0.62rem',
-            background: verdict === 'SURVIVES' ? 'rgba(52,211,153,0.2)' : verdict === 'MARGINAL' ? 'rgba(251,191,36,0.2)' : 'rgba(248,113,113,0.2)',
-            color: verdict === 'SURVIVES' ? '#34d399' : verdict === 'MARGINAL' ? '#fbbf24' : '#f87171',
-            border: `1px solid ${verdict === 'SURVIVES' ? '#34d399' : verdict === 'MARGINAL' ? '#fbbf24' : '#f87171'}`,
-            padding: '2px 8px',
-            borderRadius: '4px',
-            fontWeight: 800,
-            fontFamily: 'var(--font-mono)',
-          }}>
-            {verdict}
-          </span>
-        </div>
-
-        {/* Orbit Insertion & Touchdown Milestones */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-          <div style={{ background: 'rgba(255,255,255,0.03)', padding: '6px 8px', borderRadius: '5px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ fontSize: '0.58rem', color: '#a78bfa', fontWeight: 800 }}>🌕 REACHING ORBIT (LOI)</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.70rem', color: '#f1f5f9', fontWeight: 600, marginTop: '2px' }}>
-              {milestones.loiUtc}
-            </div>
-          </div>
-          <div style={{ background: 'rgba(255,255,255,0.03)', padding: '6px 8px', borderRadius: '5px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <div style={{ fontSize: '0.58rem', color: '#34d399', fontWeight: 800 }}>🎯 TOUCHDOWN EPOCH</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.70rem', color: '#f1f5f9', fontWeight: 600, marginTop: '2px' }}>
-              {milestones.landingUtc}
-            </div>
-          </div>
-        </div>
-
-        {/* Physical Solar Angles & Visibility at Site */}
-        <div style={{
-          background: solarEphemeris.sunVisible ? 'rgba(251,191,36,0.08)' : 'rgba(239,68,68,0.12)',
-          border: `1px solid ${solarEphemeris.sunVisible ? 'rgba(251,191,36,0.3)' : 'rgba(239,68,68,0.4)'}`,
-          borderRadius: '6px',
-          padding: '8px 10px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '4px',
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.62rem', color: '#94a3b8', fontWeight: 700 }}>Solar Azimuth / Elevation:</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.74rem', color: '#f8fafc', fontWeight: 800 }}>
-              {solarEphemeris.sunAzDeg.toFixed(1)}° / {solarEphemeris.sunElDeg.toFixed(2)}°
             </span>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.62rem', color: '#94a3b8', fontWeight: 700 }}>Direct Line-of-Sight:</span>
-            <span style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '0.68rem',
-              fontWeight: 800,
-              color: solarEphemeris.sunVisible ? '#34d399' : '#f87171',
-            }}>
-              {solarEphemeris.sunVisible ? '☀️ DIRECT SUNLIGHT (ABOVE RIDGE)' : '🌑 OCCLUDED BY CRATER RIM'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className={`status-chip ${verdict === 'SURVIVES' ? 'status-chip-safe' : verdict === 'MARGINAL' ? 'status-chip-caution' : 'status-chip-hazard'}`}>
+              {verdict}
             </span>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.62rem', color: '#94a3b8', fontWeight: 700 }}>Solar Flux / Battery SoC:</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#38bdf8', fontWeight: 800 }}>
-              {solarEphemeris.sunVisible ? '1361 W/m²' : '0 W/m²'} · {(minSoc * 100).toFixed(0)}% SoC
-            </span>
+            <button
+              onClick={() => setIsSiteCardExpanded(!isSiteCardExpanded)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-tertiary)',
+                cursor: 'pointer',
+                padding: '2px',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+              title={isSiteCardExpanded ? 'Collapse telemetry' : 'Expand full telemetry'}
+            >
+              {isSiteCardExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
           </div>
         </div>
 
-        {/* Neutral Scientific Verdict Callout */}
-        <div style={{ fontSize: '0.64rem', color: '#cbd5e1', lineHeight: 1.4, fontStyle: 'italic' }}>
-          {verdictNote}
+        {/* Compact Summary: 3 Key Metrics */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', paddingTop: '4px' }}>
+          <div style={{ background: 'var(--color-surface)', padding: '6px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border-subtle)' }}>
+            <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Solar Az/El</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' }}>
+              {solarEphemeris.sunAzDeg.toFixed(0)}° / {solarEphemeris.sunElDeg.toFixed(1)}°
+            </div>
+          </div>
+
+          <div style={{ background: 'var(--color-surface)', padding: '6px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border-subtle)' }}>
+            <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Flux</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700, color: 'var(--color-cyan)', marginTop: '2px' }}>
+              {solarEphemeris.sunVisible ? '1361 W' : '0 W'}
+            </div>
+          </div>
+
+          <div style={{ background: 'var(--color-surface)', padding: '6px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border-subtle)' }}>
+            <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Est. SoC</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 700, color: minSoc < 0.20 ? 'var(--color-hazard)' : 'var(--color-safe)', marginTop: '2px' }}>
+              {(minSoc * 100).toFixed(0)}%
+            </div>
+          </div>
         </div>
+
+        {/* Expanded Telemetry Section */}
+        {isSiteCardExpanded && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '6px', borderTop: '1px solid var(--color-border-subtle)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
+              <span style={{ color: 'var(--text-tertiary)' }}>Reaching Orbit (LOI):</span>
+              <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{milestones.loiUtc}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
+              <span style={{ color: 'var(--text-tertiary)' }}>Touchdown Epoch:</span>
+              <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{milestones.landingUtc}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
+              <span style={{ color: 'var(--text-tertiary)' }}>Line-of-Sight:</span>
+              <span style={{
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                color: solarEphemeris.sunVisible ? 'var(--color-safe)' : 'var(--color-hazard)',
+              }}>
+                {solarEphemeris.sunVisible ? 'Direct Sunlight' : 'Occluded by Ridge'}
+              </span>
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4, fontStyle: 'italic' }}>
+              {verdictNote}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* ── Delay / Mission Slip What-If Simulator Bar ── */}
+      {/* ── Delay / Mission Slip Slider (Pinned Top-Right, 12px Margin) ── */}
       <div style={{
         position: 'absolute',
-        top: 60,
+        top: 56,
         right: 12,
-        zIndex: 10,
-        background: 'rgba(6,11,25,0.94)',
-        backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255,255,255,0.10)',
-        borderRadius: '8px',
-        padding: '10px 14px',
+        zIndex: 15,
+        width: '280px',
+        maxWidth: 'calc(100vw - 24px)',
+        background: 'var(--color-panel-glass)',
+        backdropFilter: 'blur(8px)',
+        border: '1px solid var(--color-border)',
+        borderRadius: 'var(--radius-lg)',
+        padding: '12px 16px',
+        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
         display: 'flex',
         flexDirection: 'column',
-        gap: '8px',
-        width: '320px',
-        boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+        gap: '6px',
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.64rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>
-            Mission Slip / Delay Simulator
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Sliders size={13} strokeWidth={1.5} style={{ color: 'var(--color-cyan)' }} />
+            <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
+              Arrival Slip
+            </span>
+          </div>
           <span style={{
             fontFamily: 'var(--font-mono)',
-            fontSize: '0.76rem',
-            fontWeight: 800,
-            color: delaySlipDays === 0 ? '#38bdf8' : delaySlipDays <= (site.tolerance_days ?? 7) ? '#fbbf24' : '#f87171',
+            fontSize: '12px',
+            fontWeight: 700,
+            color: delaySlipDays === 0 ? 'var(--color-cyan)' : delaySlipDays <= (site.tolerance_days ?? 7) ? 'var(--color-caution)' : 'var(--color-hazard)',
           }}>
-            +{delaySlipDays} Days Slip
+            +{delaySlipDays}d
           </span>
         </div>
 
-        {/* Quick Slip Presets */}
-        <div style={{ display: 'flex', gap: '4px' }}>
-          {[0, 3, 7, 10, 14].map(days => (
-            <button
-              key={days}
-              onClick={() => setDelaySlipDays(days)}
-              style={{
-                flex: 1,
-                background: delaySlipDays === days ? '#0284c7' : 'rgba(255,255,255,0.06)',
-                color: delaySlipDays === days ? '#fff' : '#94a3b8',
-                border: delaySlipDays === days ? '1px solid #38bdf8' : '1px solid transparent',
-                borderRadius: '4px',
-                padding: '4px 0',
-                fontSize: '0.62rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              {days === 0 ? 'Nominal' : `+${days}d`}
-            </button>
-          ))}
-        </div>
+        <input
+          type="range"
+          min={-5}
+          max={20}
+          value={delaySlipDays}
+          onChange={e => setDelaySlipDays(Number(e.target.value))}
+        />
 
-        {/* Continuous Range Slider */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '0.58rem', color: '#64748b' }}>-5d</span>
-          <input
-            type="range"
-            min={-5}
-            max={20}
-            value={delaySlipDays}
-            onChange={e => setDelaySlipDays(Number(e.target.value))}
-            style={{ flex: 1, accentColor: delaySlipDays <= (site.tolerance_days ?? 7) ? '#38bdf8' : '#ef4444', height: '5px', cursor: 'pointer' }}
-          />
-          <span style={{ fontSize: '0.58rem', color: '#64748b' }}>+20d</span>
-        </div>
-
-        <div style={{ fontSize: '0.62rem', color: '#94a3b8', lineHeight: 1.35 }}>
-          {delaySlipDays === 0
-            ? 'Nominal departure. Touchdown occurs in continuous sunlight window.'
-            : delaySlipDays <= (site.tolerance_days ?? 7)
-            ? `Arrival delayed by ${delaySlipDays}d. Solar azimuth shifts by ~${(delaySlipDays * 12.2).toFixed(0)}°, remaining within forward tolerance.`
-            : `Exceeds ${site.tolerance_days}d tolerance forward. Sun rotates behind opposing ridge crest, causing shadow at touchdown.`}
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
+          <span>-5d</span>
+          <span>Forward tolerance: +{site.tolerance_days ?? 7}d</span>
+          <span>+20d</span>
         </div>
       </div>
 
-      {/* ── Ridge Camera View Angle Toolbar (Visible in Ridge Mode) ── */}
+      {/* ── Camera Angle Segmented Control (Bottom Center) ── */}
       {viewMode === 'ridge' && (
         <div style={{
           position: 'absolute',
-          bottom: 84,
+          bottom: 70,
           left: '50%',
           transform: 'translateX(-50%)',
-          zIndex: 10,
-          background: 'rgba(7,10,24,0.92)',
-          backdropFilter: 'blur(8px)',
-          border: '1px solid rgba(255,255,255,0.12)',
-          borderRadius: '8px',
-          padding: '4px 8px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+          zIndex: 15,
+          pointerEvents: 'none',
         }}>
-          <span style={{ fontSize: '0.60rem', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', marginRight: '4px' }}>
-            Camera Angle:
-          </span>
-          {[
-            { id: 'oblique', label: '📐 Ridge Perspective' },
-            { id: 'target', label: '🎯 Touchdown Close-Up' },
-            { id: 'horizon', label: '🌄 Horizon Sun View' },
-            { id: 'polar', label: '🗺 Polar Top-Down' },
-          ].map(c => (
-            <button
-              key={c.id}
-              onClick={() => setRidgeCameraPreset(c.id)}
-              style={{
-                background: ridgeCameraPreset === c.id ? '#0284c7' : 'rgba(255,255,255,0.06)',
-                color: ridgeCameraPreset === c.id ? '#fff' : '#cbd5e1',
-                border: ridgeCameraPreset === c.id ? '1px solid #38bdf8' : '1px solid transparent',
-                borderRadius: '5px',
-                padding: '4px 9px',
-                fontSize: '0.66rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              {c.label}
-            </button>
-          ))}
+          <div className="segmented-control" style={{ pointerEvents: 'auto', background: 'var(--color-panel-glass)', backdropFilter: 'blur(8px)' }}>
+            {[
+              { id: 'oblique', label: 'Ridge Perspective' },
+              { id: 'target', label: 'Touchdown Close-Up' },
+              { id: 'horizon', label: 'Horizon Sun' },
+              { id: 'polar', label: 'Polar Top-Down' },
+            ].map(c => (
+              <button
+                key={c.id}
+                onClick={() => setRidgeCameraPreset(c.id)}
+                className={`segmented-item ${ridgeCameraPreset === c.id ? 'active' : ''}`}
+              >
+                <Camera size={13} strokeWidth={1.5} />
+                <span>{c.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* ── 3D WebGL Canvas ── */}
+      {/* ── 3D Full-Bleed WebGL Canvas ── */}
       <div style={{ flex: 1, position: 'relative' }}>
         <Canvas
           camera={{ position: [3.2, 3.8, 4.5], fov: 46 }}
           shadows
-          style={{ background: 'radial-gradient(circle at 50% 50%, #0c1122 0%, #050711 100%)' }}
+          style={{ background: 'transparent' }}
         >
-          {/* Deep Starfield */}
           <Stars radius={150} depth={60} count={3500} factor={4} saturation={0} fade speed={0.8} />
 
           <Suspense fallback={null}>
             {viewMode === 'flight' ? (
-              // ── SCENE A: Macro Translunar Space Flight & Orbit Insertion ──
               <>
                 <OrbitControls makeDefault enableDamping dampingFactor={0.06} />
                 <MacroSunObject showLabels={showLabels} />
                 <MacroEarthObject position={curFrame.earthPos} showLabels={showLabels} />
                 <MacroMoonObject position={curFrame.moonPos} site={site} showLabels={showLabels} />
-                <TrajectoryRibbon points={trailPoints} phase={curFrame.phase} qualityTier={qualityTier} />
+                <TrajectoryRibbon points={trailPoints} phase={curFrame.phase} />
                 <SpacecraftMarker position={curFrame.craftPos} thrustActive={curFrame.thrust} qualityTier={qualityTier} />
               </>
             ) : (
-              // ── SCENE B: Landing Site Ridge Terrain Window & Solar Illumination ──
               <>
                 <RidgeCameraController cameraPreset={ridgeCameraPreset} centerElevation={centerElevation} />
-
-                {/* Real Topocentric Physical Solar Direction & Shadows */}
                 <PhysicalTopocentricSun
                   sunAzDeg={solarEphemeris.sunAzDeg}
                   sunElDeg={solarEphemeris.sunElDeg}
                   sunVisible={solarEphemeris.sunVisible}
                   centerElevation={centerElevation}
                 />
-
-                {/* 3D LOLA DTM Ridge Elevation Mesh */}
                 <TopographicRidgeMesh
                   meshData={meshData}
                   renderMode={terrainRenderMode}
                   onCenterComputed={setCenterElevation}
                 />
-
-                {/* Marked Touchdown Footprint with Targeting Reticle & Guidance Laser */}
                 <TouchdownFootprintMarker
                   centerElevation={centerElevation}
                   site={site}
                   sunVisible={solarEphemeris.sunVisible}
                   batterySoc={minSoc}
                 />
-
-                {/* 3D Compass Direction Markers on Terrain Perimeter */}
                 <CompassMarkers />
               </>
             )}
@@ -1471,88 +1317,48 @@ export default function ChoreographyPlayer({
         </Canvas>
       </div>
 
-      {/* ── Bottom Playback Controls & Time Scrubber Bar ── */}
+      {/* ── Slim Playback Bar (Bottom) ── */}
       <div style={{
-        background: '#070a18',
-        borderTop: '1px solid rgba(255,255,255,0.08)',
-        padding: '10px 20px',
+        background: 'var(--color-surface)',
+        borderTop: '1px solid var(--color-border)',
+        padding: '10px 18px',
         display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
-        zIndex: 10,
+        alignItems: 'center',
+        gap: '14px',
+        zIndex: 20,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-          {/* Play/Pause & Speed */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Play/Pause & Speed */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <button
+            onClick={() => setIsPlaying(!isPlaying)}
+            className={`btn ${isPlaying ? 'btn-secondary' : 'btn-primary'}`}
+            style={{ padding: '6px 14px', fontSize: '12px' }}
+          >
+            {isPlaying ? <Pause size={13} strokeWidth={2} /> : <Play size={13} strokeWidth={2} />}
+            <span>{isPlaying ? 'Pause' : 'Play'}</span>
+          </button>
+          {[1, 5, 20].map(s => (
             <button
-              onClick={() => setIsPlaying(!isPlaying)}
+              key={s}
+              onClick={() => setPlaySpeed(s)}
+              className={`btn ${playSpeed === s ? 'btn-secondary' : 'btn-ghost'}`}
               style={{
-                background: isPlaying ? 'rgba(248,113,113,0.18)' : 'rgba(56,189,248,0.22)',
-                border: `1px solid ${isPlaying ? 'rgba(248,113,113,0.5)' : 'rgba(56,189,248,0.5)'}`,
-                color: isPlaying ? '#f87171' : '#38bdf8',
-                borderRadius: '6px',
-                padding: '6px 16px',
-                fontSize: '0.76rem',
-                fontWeight: 800,
-                cursor: 'pointer',
+                padding: '4px 8px',
+                fontSize: '11px',
+                fontFamily: 'var(--font-mono)',
+                borderColor: playSpeed === s ? 'var(--color-cyan-border)' : 'transparent',
+                color: playSpeed === s ? 'var(--color-cyan)' : 'var(--text-tertiary)',
               }}
             >
-              {isPlaying ? '⏸ Pause' : '▶ Play 3D'}
+              {s}x
             </button>
-            {[1, 5, 20].map(s => (
-              <button
-                key={s}
-                onClick={() => setPlaySpeed(s)}
-                style={{
-                  background: playSpeed === s ? '#0284c7' : 'rgba(255,255,255,0.06)',
-                  color: playSpeed === s ? '#fff' : '#94a3b8',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '4px 9px',
-                  fontSize: '0.66rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                }}
-              >
-                {s}x
-              </button>
-            ))}
-          </div>
-
-          {/* Current Milestone / Phase Pill */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{
-              background: `${PHASE_COLORS[curFrame.phase]}25`,
-              color: PHASE_COLORS[curFrame.phase],
-              border: `1px solid ${PHASE_COLORS[curFrame.phase]}60`,
-              borderRadius: '4px',
-              padding: '3px 10px',
-              fontSize: '0.72rem',
-              fontWeight: 800,
-              fontFamily: 'var(--font-mono)',
-            }}>
-              {curFrame.phase}
-            </span>
-            {curFrame.event && (
-              <span style={{
-                background: 'rgba(251,191,36,0.18)',
-                color: '#fbbf24',
-                border: '1px solid rgba(251,191,36,0.5)',
-                borderRadius: '4px',
-                padding: '3px 10px',
-                fontSize: '0.72rem',
-                fontWeight: 800,
-              }}>
-                ✦ {curFrame.event}
-              </span>
-            )}
-          </div>
+          ))}
         </div>
 
-        {/* Flight Time Progress Scrubber */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '0.64rem', color: '#64748b', fontFamily: 'var(--font-mono)' }}>
-            🚀 Launch
+        {/* Scrubber with Launch & Touchdown Markers */}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
+            T+0 Launch
           </span>
           <input
             type="range"
@@ -1560,12 +1366,27 @@ export default function ChoreographyPlayer({
             max={frames.length - 1}
             value={currentStep}
             onChange={e => setCurrentStep(Number(e.target.value))}
-            style={{ flex: 1, accentColor: '#38bdf8', height: '6px', cursor: 'pointer' }}
+            style={{ flex: 1 }}
           />
-          <span style={{ fontSize: '0.64rem', color: '#64748b', fontFamily: 'var(--font-mono)' }}>
-            🎯 Touchdown ({site?.name?.slice(0, 16)})
+          <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
+            Touchdown
           </span>
         </div>
+
+        {/* Phase Pill */}
+        <span style={{
+          fontSize: '11px',
+          fontFamily: 'var(--font-mono)',
+          fontWeight: 700,
+          color: PHASE_COLORS[curFrame.phase] || 'var(--text-primary)',
+          background: 'rgba(255, 255, 255, 0.04)',
+          border: '1px solid var(--color-border)',
+          borderRadius: 'var(--radius-sm)',
+          padding: '3px 8px',
+          whiteSpace: 'nowrap',
+        }}>
+          {curFrame.phase}
+        </span>
       </div>
     </div>
   )

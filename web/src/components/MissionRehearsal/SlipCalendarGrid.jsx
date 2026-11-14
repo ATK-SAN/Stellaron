@@ -1,51 +1,56 @@
-/** SlipCalendarGrid.jsx — Visual slip calendar sweep grid with color-blind accessible patterns */
+/** SlipCalendarGrid.jsx — Mission Control Slip Calendar Sweep Grid
+ * Accessible color-blind patterns, JetBrains Mono data, Lucide line icons
+ */
 
 import { useState } from 'react'
+import { Calendar, Check, AlertTriangle, X } from 'lucide-react'
 
 const VERDICT_STYLE = {
   survives: {
-    bg: 'rgba(52,211,153,0.15)',
-    border: 'rgba(52,211,153,0.5)',
-    color: '#34d399',
-    icon: '✓',
-    // No pattern — solid green for survives
+    bg: 'rgba(16, 185, 129, 0.12)',
+    border: 'rgba(16, 185, 129, 0.4)',
+    color: '#10B981',
+    Icon: Check,
     pattern: 'none',
   },
   marginal: {
-    bg: 'rgba(251,191,36,0.1)',
-    border: 'rgba(251,191,36,0.5)',
-    color: '#fbbf24',
-    icon: '⚠',
-    // Diagonal stripe pattern for color-blind accessibility
-    pattern: 'repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(251,191,36,0.15) 3px, rgba(251,191,36,0.15) 6px)',
+    bg: 'rgba(245, 158, 11, 0.10)',
+    border: 'rgba(245, 158, 11, 0.4)',
+    color: '#F59E0B',
+    Icon: AlertTriangle,
+    pattern: 'repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(245, 158, 11, 0.15) 3px, rgba(245, 158, 11, 0.15) 6px)',
   },
   fails: {
-    bg: 'rgba(248,113,113,0.1)',
-    border: 'rgba(248,113,113,0.5)',
-    color: '#f87171',
-    icon: '✗',
-    // Cross-hatch pattern for color-blind accessibility
-    pattern: 'repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(248,113,113,0.12) 3px, rgba(248,113,113,0.12) 6px)',
+    bg: 'rgba(239, 68, 68, 0.10)',
+    border: 'rgba(239, 68, 68, 0.4)',
+    color: '#EF4444',
+    Icon: X,
+    pattern: 'repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(239, 68, 68, 0.15) 3px, rgba(239, 68, 68, 0.15) 6px)',
   },
 }
 
 function TooltipContent({ cell }) {
-  const lf = { none: '—', battery_reserve: 'Battery reserve', earth_blackout: 'Earth blackout', sunlit_fraction: 'Sunlit fraction' }
+  const lf = {
+    none: 'None',
+    battery_reserve: 'Battery reserve deficit',
+    earth_blackout: 'Earth blackout exceeded',
+    sunlit_fraction: 'Insufficient sunlight duration',
+  }
   return (
-    <div style={{ minWidth: '200px' }}>
-      <div style={{ color: '#f1f5f9', fontWeight: 700, marginBottom: '6px', fontFamily: 'var(--font-mono)', fontSize: '0.72rem' }}>
+    <div style={{ minWidth: '190px' }}>
+      <div style={{ color: 'var(--text-primary)', fontWeight: 700, marginBottom: '6px', fontFamily: 'var(--font-mono)', fontSize: '12px' }}>
         {cell.date_utc?.slice(0, 10)}
       </div>
       {[
-        ['Verdict', VERDICT_STYLE[cell.verdict]?.icon + ' ' + cell.verdict?.toUpperCase()],
+        ['Verdict', cell.verdict?.toUpperCase()],
         ['Min SoC', `${((cell.min_soc || 0) * 100).toFixed(1)}%`],
         ['Sunlit Hours', `${cell.sunlit_hours || 0}h`],
         ['Max Blackout', `${cell.blackout_hours || 0}h`],
-        ['Limiting Factor', lf[cell.limiting_factor] || cell.limiting_factor || '—'],
+        ['Limiting Factor', lf[cell.limiting_factor] || cell.limiting_factor || 'None'],
       ].map(([k, v]) => (
-        <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '0.68rem', marginBottom: '3px' }}>
-          <span style={{ color: '#64748b' }}>{k}</span>
-          <span style={{ color: '#e2e8f0', fontFamily: 'var(--font-mono)' }}>{v}</span>
+        <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '11px', marginBottom: '3px' }}>
+          <span style={{ color: 'var(--text-secondary)' }}>{k}</span>
+          <span style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{v}</span>
         </div>
       ))}
     </div>
@@ -56,72 +61,85 @@ export default function SlipCalendarGrid({ slipCalendar }) {
   const [tooltip, setTooltip] = useState(null)
 
   if (!slipCalendar) return null
-  const { cells = [], baseline_landing_utc, tolerance_days_forward, first_failing_offset_days, next_pass_window_utc } = slipCalendar
+  const { cells = [], baseline_landing_utc, tolerance_days_forward } = slipCalendar
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      {/* Title */}
-      <div>
-        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>
-          Slip Calendar
+    <div style={{
+      background: 'var(--color-panel)',
+      border: '1px solid var(--color-border)',
+      borderRadius: 'var(--radius-lg)',
+      padding: '20px 24px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '14px',
+    }}>
+      {/* Title & Baseline Metadata */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Calendar size={16} strokeWidth={1.5} style={{ color: 'var(--color-cyan)' }} />
+          <span style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
+            Landing Slip Calendar Sweep
+          </span>
         </div>
-        <div style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
-          Hover any cell for details. Baseline landing: <span style={{ fontFamily: 'var(--font-mono)', color: '#38bdf8' }}>{baseline_landing_utc?.slice(0, 10)}</span>
+        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+          Baseline landing: <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-cyan)', fontWeight: 600 }}>{baseline_landing_utc?.slice(0, 10)}</span>
+          {tolerance_days_forward != null && (
+            <span style={{ marginLeft: '12px', color: 'var(--text-tertiary)' }}>
+              Forward tolerance: <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-safe)', fontWeight: 700 }}>+{tolerance_days_forward}d</span>
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Grid */}
+      {/* Grid of Days */}
       <div style={{ position: 'relative' }}>
         <div style={{
           display: 'flex',
           flexWrap: 'wrap',
-          gap: '4px',
+          gap: '5px',
         }}>
           {cells.map((cell) => {
             const vs = VERDICT_STYLE[cell.verdict] || VERDICT_STYLE.fails
             const isBaseline = cell.offset_days === 0
+            const CellIcon = vs.Icon
             return (
               <div
                 key={cell.offset_days}
                 onMouseEnter={(e) => setTooltip({ cell, x: e.clientX, y: e.clientY })}
                 onMouseLeave={() => setTooltip(null)}
                 style={{
-                  width: '54px',
+                  width: '56px',
                   background: vs.pattern !== 'none' ? vs.pattern : vs.bg,
                   backgroundColor: vs.pattern !== 'none' ? undefined : vs.bg,
-                  border: `${isBaseline ? '2px' : '1px'} solid ${isBaseline ? '#38bdf8' : vs.border}`,
-                  borderRadius: '5px',
+                  border: `${isBaseline ? '2px' : '1px'} solid ${isBaseline ? 'var(--color-cyan)' : vs.border}`,
+                  borderRadius: 'var(--radius-sm)',
                   padding: '6px 4px',
                   textAlign: 'center',
                   cursor: 'default',
                   position: 'relative',
-                  boxShadow: isBaseline ? '0 0 10px rgba(56,189,248,0.3)' : 'none',
-                  transition: 'transform 0.1s',
+                  boxShadow: isBaseline ? '0 0 12px rgba(34, 211, 238, 0.4)' : 'none',
+                  transition: 'all 150ms ease',
                 }}
-                onMouseOver={e => e.currentTarget.style.transform = 'scale(1.08)'}
-                onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
               >
-                {isBaseline && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '-14px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    fontSize: '0.55rem',
-                    color: '#38bdf8',
-                    fontWeight: 700,
-                    whiteSpace: 'nowrap',
-                  }}>
-                    BASE
-                  </div>
-                )}
-                <div style={{ fontSize: '0.78rem', color: vs.color, fontWeight: 700 }}>
-                  {vs.icon}
+                <div style={{
+                  fontSize: '11px',
+                  fontFamily: 'var(--font-mono)',
+                  color: isBaseline ? 'var(--color-cyan)' : 'var(--text-secondary)',
+                  fontWeight: isBaseline ? 800 : 600,
+                  marginBottom: '2px',
+                }}>
+                  {cell.offset_days > 0 ? `+${cell.offset_days}d` : `${cell.offset_days}d`}
                 </div>
-                <div style={{ fontSize: '0.60rem', color: '#94a3b8', fontFamily: 'var(--font-mono)', marginTop: '1px' }}>
-                  {cell.offset_days >= 0 ? `+${cell.offset_days}d` : `${cell.offset_days}d`}
+                <div style={{ color: vs.color, display: 'flex', justifyContent: 'center' }}>
+                  <CellIcon size={12} strokeWidth={2} />
                 </div>
-                <div style={{ fontSize: '0.60rem', color: vs.color, fontFamily: 'var(--font-mono)' }}>
+                <div style={{
+                  fontSize: '9px',
+                  fontFamily: 'var(--font-mono)',
+                  color: vs.color,
+                  marginTop: '2px',
+                  fontWeight: 600,
+                }}>
                   {((cell.min_soc || 0) * 100).toFixed(0)}%
                 </div>
               </div>
@@ -129,19 +147,20 @@ export default function SlipCalendarGrid({ slipCalendar }) {
           })}
         </div>
 
-        {/* Tooltip */}
+        {/* Hover Tooltip */}
         {tooltip && (
           <div style={{
             position: 'fixed',
-            left: Math.min(tooltip.x + 12, window.innerWidth - 240),
-            top: tooltip.y - 10,
-            background: 'rgba(7,10,24,0.97)',
-            border: '1px solid rgba(255,255,255,0.15)',
-            borderRadius: '8px',
+            left: Math.min(window.innerWidth - 220, tooltip.x + 12),
+            top: tooltip.y - 80,
+            zIndex: 100,
+            background: 'var(--color-panel-glass)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-md)',
             padding: '10px 14px',
-            zIndex: 9999,
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
             pointerEvents: 'none',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
           }}>
             <TooltipContent cell={tooltip.cell} />
           </div>
@@ -149,64 +168,27 @@ export default function SlipCalendarGrid({ slipCalendar }) {
       </div>
 
       {/* Legend */}
-      <div style={{ display: 'flex', gap: '16px', fontSize: '0.68rem', color: '#64748b', flexWrap: 'wrap' }}>
-        {[
-          { verdict: 'survives', label: 'Survives' },
-          { verdict: 'marginal', label: 'Marginal (striped)' },
-          { verdict: 'fails', label: 'Fails (cross-hatched)' },
-        ].map(l => {
-          const vs = VERDICT_STYLE[l.verdict]
-          return (
-            <div key={l.verdict} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <div style={{
-                width: '14px', height: '14px',
-                background: vs.pattern !== 'none' ? vs.pattern : vs.bg,
-                backgroundColor: vs.pattern !== 'none' ? undefined : vs.bg,
-                border: `1px solid ${vs.border}`,
-                borderRadius: '3px',
-              }} />
-              <span>{l.label}</span>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Summary row */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-        gap: '8px',
-        background: 'rgba(5,7,17,0.6)',
-        border: '1px solid rgba(255,255,255,0.07)',
-        borderRadius: '8px',
-        padding: '12px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px',
+        paddingTop: '8px',
+        borderTop: '1px solid var(--color-border-subtle)',
+        fontSize: '11px',
+        color: 'var(--text-tertiary)',
       }}>
-        {[
-          {
-            label: 'Forward Tolerance',
-            value: tolerance_days_forward != null ? `${tolerance_days_forward} day${tolerance_days_forward !== 1 ? 's' : ''}` : '—',
-            color: tolerance_days_forward > 3 ? '#34d399' : tolerance_days_forward > 0 ? '#fbbf24' : '#f87171',
-          },
-          {
-            label: 'First Failing Offset',
-            value: first_failing_offset_days != null ? `+${first_failing_offset_days}d` : 'None in sweep',
-            color: first_failing_offset_days == null ? '#34d399' : '#f87171',
-          },
-          {
-            label: 'Next Recovery',
-            value: next_pass_window_utc ? next_pass_window_utc.slice(0, 10) : '—',
-            color: '#94a3b8',
-          },
-        ].map(s => (
-          <div key={s.label}>
-            <div style={{ fontSize: '0.62rem', color: '#475569', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.06em' }}>
-              {s.label}
-            </div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', fontWeight: 800, color: s.color, marginTop: '2px' }}>
-              {s.value}
-            </div>
-          </div>
-        ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: 'var(--color-safe)', border: '1px solid var(--color-safe-border)' }} />
+          <span>Survives (&gt;20% reserve)</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: 'var(--color-caution)', border: '1px solid var(--color-caution-border)' }} />
+          <span>Marginal (tight buffer)</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: 'var(--color-hazard)', border: '1px solid var(--color-hazard-border)' }} />
+          <span>Fails (depletes reserve)</span>
+        </div>
       </div>
     </div>
   )

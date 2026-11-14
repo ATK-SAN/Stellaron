@@ -12,7 +12,6 @@ export default defineConfig({
           three: ['three'],
           'react-three': ['@react-three/fiber', '@react-three/drei'],
           recharts: ['recharts'],
-          react: ['react', 'react-dom'],
         },
       },
     },

@@ -1,35 +1,42 @@
-/** DecisionGatesTimeline.jsx — Horizontal decision gates timeline for Mission Rehearsal */
+/** DecisionGatesTimeline.jsx — Flight-Ops Decision Gates Timeline
+ * Restyled with:
+ * - Lucide line icons (GitCommit, AlertTriangle, Clock)
+ * - Deep space panel styling and JetBrains Mono timestamps
+ * - Clear remaining tolerance indicators
+ */
 
-const GATE_COLORS = {
-  PRE_LAUNCH: '#38bdf8',
-  POST_LAUNCH: '#a78bfa',
-  LUNAR_ORBIT_ARRIVAL: '#34d399',
-  PRE_DESCENT: '#fbbf24',
+import { GitCommit, AlertTriangle, Clock } from 'lucide-react'
+
+const GATE_NAMES = {
+  PRE_LAUNCH: 'Pre-Launch Hold',
+  POST_LAUNCH: 'Post-Launch TLI',
+  LUNAR_ORBIT_ARRIVAL: 'Lunar Orbit Insertion (LOI)',
+  PRE_DESCENT: 'Pre-Descent Checkout (PDI)',
 }
 
 function ToleranceBar({ remaining, maxDays = 10 }) {
-  const frac = Math.min(1, (remaining || 0) / maxDays)
-  const color = remaining > 3 ? '#34d399' : remaining > 0 ? '#fbbf24' : '#f87171'
+  const frac = Math.min(1, Math.max(0, (remaining || 0) / maxDays))
+  const color = remaining > 3 ? 'var(--color-safe)' : remaining > 0 ? 'var(--color-caution)' : 'var(--color-hazard)'
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
       <div style={{
-        height: '6px',
+        height: '4px',
         flex: 1,
         background: 'rgba(255,255,255,0.08)',
-        borderRadius: '3px',
+        borderRadius: 'var(--radius-pill)',
         overflow: 'hidden',
       }}>
         <div style={{
           height: '100%',
           width: `${frac * 100}%`,
           background: color,
-          borderRadius: '3px',
-          transition: 'width 0.3s',
+          borderRadius: 'var(--radius-pill)',
+          transition: 'width 200ms ease',
           boxShadow: `0 0 6px ${color}60`,
         }} />
       </div>
-      <span style={{ fontSize: '0.68rem', fontFamily: 'var(--font-mono)', color, fontWeight: 700, minWidth: '28px' }}>
-        {remaining}d
+      <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', color, fontWeight: 700, minWidth: '24px' }}>
+        +{remaining}d
       </span>
     </div>
   )
@@ -38,124 +45,105 @@ function ToleranceBar({ remaining, maxDays = 10 }) {
 export default function DecisionGatesTimeline({ decisionGates }) {
   if (!decisionGates || decisionGates.length === 0) return null
 
-  const phaseLabels = [
-    { label: 'TRANSIT', note: 'illustrative' },
-    { label: 'LUNAR ORBIT', note: 'illustrative' },
-    { label: 'DESCENT', note: 'illustrative' },
-  ]
-
   const maxTolerance = Math.max(...decisionGates.map(g => g.remaining_tolerance_days || 0), 10)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      {/* Title + Schematic banner */}
-      <div>
-        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '6px' }}>
-          Decision Gates
+    <div style={{
+      background: 'var(--color-panel)',
+      border: '1px solid var(--color-border)',
+      borderRadius: 'var(--radius-lg)',
+      padding: '20px 24px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '14px',
+    }}>
+      {/* Title + Schematic Notice */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <GitCommit size={16} strokeWidth={1.5} style={{ color: 'var(--color-cyan)' }} />
+          <span style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
+            Mission Decision Gates
+          </span>
         </div>
         <div style={{
-          background: 'rgba(251,191,36,0.07)',
-          border: '1px solid rgba(251,191,36,0.3)',
-          borderRadius: '5px',
-          padding: '5px 10px',
-          fontSize: '0.68rem',
-          color: '#fbbf24',
-          fontStyle: 'italic',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          background: 'rgba(245, 158, 11, 0.08)',
+          border: '1px solid var(--color-caution-border)',
+          borderRadius: 'var(--radius-sm)',
+          padding: '4px 10px',
+          fontSize: '11px',
+          color: 'var(--color-caution)',
         }}>
-          ⚠ Schematic phases are illustrative — not a trajectory design.
+          <AlertTriangle size={12} strokeWidth={1.5} />
+          <span>Schematic phases are illustrative — not a flight dynamics trajectory design.</span>
         </div>
       </div>
 
-      {/* Horizontal timeline bar */}
-      <div style={{ position: 'relative', overflowX: 'auto', paddingBottom: '4px' }}>
-        {/* Phase connector row */}
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', minWidth: '600px' }}>
-          {decisionGates.map((gate, i) => {
-            const color = GATE_COLORS[gate.gate] || '#94a3b8'
-            return (
-              <div key={gate.gate} style={{ display: 'flex', alignItems: 'center', flex: i < decisionGates.length - 1 ? 1 : 0 }}>
-                {/* Gate node */}
-                <div style={{
-                  width: '10px',
-                  height: '10px',
-                  borderRadius: '50%',
-                  background: color,
-                  boxShadow: `0 0 8px ${color}80`,
-                  flexShrink: 0,
-                }} />
-                {/* Phase line + label */}
-                {i < decisionGates.length - 1 && (
-                  <div style={{ flex: 1, position: 'relative', margin: '0 4px' }}>
-                    <div style={{ height: '2px', background: 'rgba(255,255,255,0.1)', borderRadius: '1px' }} />
-                    <div style={{
-                      position: 'absolute',
-                      top: '6px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      whiteSpace: 'nowrap',
-                      fontSize: '0.56rem',
-                      color: '#475569',
-                      fontStyle: 'italic',
-                    }}>
-                      {phaseLabels[i]?.label} ({phaseLabels[i]?.note})
-                    </div>
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Gate cards */}
-        <div style={{ display: 'flex', gap: '8px', minWidth: '600px' }}>
-          {decisionGates.map((gate) => {
-            const color = GATE_COLORS[gate.gate] || '#94a3b8'
-            const rem = gate.remaining_tolerance_days || 0
-            const remColor = rem > 3 ? '#34d399' : rem > 0 ? '#fbbf24' : '#f87171'
-            return (
-              <div key={gate.gate} style={{
-                flex: 1,
-                background: 'rgba(5,7,17,0.7)',
-                border: `1px solid ${color}40`,
-                borderRadius: '8px',
-                padding: '10px 12px',
+      {/* Decision Gates Grid / Flow */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+        gap: '12px',
+        paddingTop: '6px',
+      }}>
+        {decisionGates.map((gate, i) => {
+          const isFinalGate = i === decisionGates.length - 1
+          return (
+            <div
+              key={gate.gate}
+              style={{
+                background: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-md)',
+                padding: '14px 16px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '6px',
-              }}>
-                <div style={{ fontSize: '0.60rem', color, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                  {gate.name}
-                </div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', color: '#475569' }}>
-                  {gate.time_utc?.slice(0, 10)}
-                </div>
-                <div style={{ fontSize: '0.68rem', color: '#64748b' }}>
-                  Slip so far: <span style={{ color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
-                    {gate.slip_so_far_days > 0 ? `+${gate.slip_so_far_days}d` : '0d'}
-                  </span>
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.60rem', color: '#475569', marginBottom: '3px' }}>
-                    Remaining tolerance
-                  </div>
-                  <ToleranceBar remaining={rem} maxDays={maxTolerance} />
-                </div>
-                {gate.first_failing_landing_utc && (
-                  <div style={{ fontSize: '0.60rem', color: '#475569' }}>
-                    First fail: <span style={{ color: '#f87171', fontFamily: 'var(--font-mono)' }}>
-                      {gate.first_failing_landing_utc.slice(0, 10)}
-                    </span>
-                  </div>
-                )}
-                {!gate.first_failing_landing_utc && (
-                  <div style={{ fontSize: '0.60rem', color: '#34d399' }}>
-                    No failure in sweep ✓
-                  </div>
-                )}
+                gap: '8px',
+                position: 'relative',
+              }}
+            >
+              {/* Step indicator */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{
+                  fontSize: '10px',
+                  fontFamily: 'var(--font-mono)',
+                  color: 'var(--color-cyan)',
+                  background: 'var(--color-cyan-subtle)',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  fontWeight: 700,
+                }}>
+                  GATE 0{i + 1}
+                </span>
+                <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
+                  Slip: {gate.slip_so_far_days}d
+                </span>
               </div>
-            )
-          })}
-        </div>
+
+              {/* Gate Name */}
+              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                {GATE_NAMES[gate.gate] || gate.name}
+              </div>
+
+              {/* Timestamp */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
+                <Clock size={12} strokeWidth={1.5} />
+                <span>{gate.time_utc ? gate.time_utc.slice(0, 16).replace('T', ' ') + ' UTC' : '—'}</span>
+              </div>
+
+              {/* Tolerance remaining progress */}
+              <div style={{ marginTop: '4px', paddingTop: '8px', borderTop: '1px solid var(--color-border-subtle)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-tertiary)', marginBottom: '4px' }}>
+                  <span>Tolerance Remaining</span>
+                  <span>Max: +{maxTolerance}d</span>
+                </div>
+                <ToleranceBar remaining={gate.remaining_tolerance_days} maxDays={maxTolerance} />
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 
 export default function NasaCrossCheckPanel({ selectedSite }) {
   const [crosscheck, setCrosscheck] = useState(null)
@@ -27,7 +27,7 @@ export default function NasaCrossCheckPanel({ selectedSite }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       {/* Header Banner */}
       <div style={{
-        background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.12) 0%, rgba(99, 102, 241, 0.08) 100%)',
+        background: 'var(--color-panel)',
         border: '1px solid rgba(56, 189, 248, 0.3)',
         borderRadius: '8px',
         padding: '14px 18px',
@@ -37,7 +37,7 @@ export default function NasaCrossCheckPanel({ selectedSite }) {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '1.2rem' }}>🔬</span>
+            
             <h3 style={{ margin: 0, fontSize: '0.95rem', color: '#f8fafc', fontWeight: 600 }}>
               NASA Scientific Validation & Literature Cross-Check Matrix
             </h3>
@@ -154,7 +154,7 @@ export default function NasaCrossCheckPanel({ selectedSite }) {
           padding: '12px 14px'
         }}>
           <div style={{ color: '#38bdf8', fontSize: '0.78rem', fontWeight: 600, marginBottom: '4px' }}>
-            🛰 Ephemeris Precision
+            Ephemeris Precision
           </div>
           <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8', lineHeight: 1.4 }}>
             Sub-second bisection convergence (&le;1.0s precision) using JPL DE421 ephemeris with full topocentric parallax correction for the 1.5m lander mast.
@@ -168,7 +168,7 @@ export default function NasaCrossCheckPanel({ selectedSite }) {
           padding: '12px 14px'
         }}>
           <div style={{ color: '#fbbf24', fontSize: '0.78rem', fontWeight: 600, marginBottom: '4px' }}>
-            ⛰ LOLA Topography Standard
+            LOLA Topography Standard
           </div>
           <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8', lineHeight: 1.4 }}>
             Every site incorporates NASA LOLA reference elevation datum. Slope gradients evaluate landing safety within the Artemis III 15° lander tilt boundary.
@@ -182,7 +182,7 @@ export default function NasaCrossCheckPanel({ selectedSite }) {
           padding: '12px 14px'
         }}>
           <div style={{ color: '#34d399', fontSize: '0.78rem', fontWeight: 600, marginBottom: '4px' }}>
-            🔒 Zero Fabrication Guarantee
+            Zero Fabrication Guarantee
           </div>
           <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8', lineHeight: 1.4 }}>
             All metrics are cryptographically bound to canonical SHA-256 output hashes. No hallucinated DEMs, no simulated numbers without traceable kernels.

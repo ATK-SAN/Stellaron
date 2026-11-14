@@ -1,4 +1,15 @@
+/** SiteSelector.jsx — Flight-Ops Landing Site Selector Panel
+ *
+ * Restyled with:
+ * - One row = Name, mono coordinates, one outlined status chip, one score
+ * - Selected row: Electric cyan left border + slightly lighter surface (#1F2937), not filled blue
+ * - One chip style for HERO / VERIFIED / LIMITED (small outlined chip with semantic color)
+ * - Tiny two-segment sparkline for Sun/Earth visibility
+ * - Lucide line icons (Search, Compass, Filter)
+ */
+
 import { useState, useMemo } from 'react'
+import { Search } from 'lucide-react'
 
 function formatCoord(val, posDir, negDir) {
   if (val == null) return '—'
@@ -10,75 +21,30 @@ function calculateScore(site) {
   const sun = (site.sunlight_fraction ?? 0.4) * 100
   const earth = (site.geometric_earth_visibility_fraction ?? 0.5) * 100
   const slopeSafety = site.landing_safety_score ?? 80
-  // Balanced Mission Feasibility Score
   const score = Math.round(sun * 0.45 + earth * 0.35 + slopeSafety * 0.2)
   return Math.min(99, Math.max(25, score))
 }
 
-function CoverageBadge({ coverage }) {
+function StatusChip({ coverage }) {
   if (coverage === 'hero') {
-    return (
-      <span style={{
-        fontFamily: 'var(--font-mono)',
-        background: 'rgba(251, 191, 36, 0.15)',
-        color: '#fbbf24',
-        border: '1px solid rgba(251, 191, 36, 0.3)',
-        borderRadius: '4px',
-        padding: '1px 5px',
-        fontSize: '0.6rem',
-        fontWeight: 700,
-        letterSpacing: '0.04em'
-      }}>
-        HERO
-      </span>
-    )
+    return <span className="status-chip status-chip-caution">HERO</span>
   }
   if (coverage === 'limited') {
-    return (
-      <span style={{
-        fontFamily: 'var(--font-mono)',
-        background: 'rgba(239, 68, 68, 0.15)',
-        color: '#f87171',
-        border: '1px solid rgba(239, 68, 68, 0.3)',
-        borderRadius: '4px',
-        padding: '1px 5px',
-        fontSize: '0.6rem',
-        fontWeight: 700,
-        letterSpacing: '0.04em'
-      }}>
-        LIMITED
-      </span>
-    )
+    return <span className="status-chip status-chip-hazard">LIMITED</span>
   }
-  return (
-    <span style={{
-      fontFamily: 'var(--font-mono)',
-      background: 'rgba(56, 189, 248, 0.12)',
-      color: '#38bdf8',
-      border: '1px solid rgba(56, 189, 248, 0.25)',
-      borderRadius: '4px',
-      padding: '1px 5px',
-      fontSize: '0.6rem',
-      fontWeight: 600,
-      letterSpacing: '0.04em'
-    }}>
-      VERIFIED
-    </span>
-  )
+  return <span className="status-chip status-chip-safe">VERIFIED</span>
 }
 
-export default function SiteSelector({ sites, selectedSite, onSelect }) {
+export default function SiteSelector({ sites = [], selectedSite, onSelect }) {
   const [filter, setFilter] = useState('all') // 'all' | 'artemis' | 'apollo' | 'farside'
   const [search, setSearch] = useState('')
 
   const filteredSites = useMemo(() => {
     return sites.filter(site => {
-      // Category filter
       if (filter === 'artemis' && site.lat_deg > -80) return false
       if (filter === 'apollo' && !site.id.startsWith('apollo')) return false
       if (filter === 'farside' && site.id !== 'change_4') return false
 
-      // Text search
       if (search.trim()) {
         const query = search.toLowerCase()
         const matchName = site.name.toLowerCase().includes(query)
@@ -90,55 +56,57 @@ export default function SiteSelector({ sites, selectedSite, onSelect }) {
   }, [sites, filter, search])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#070a18' }}>
-      {/* Search Bar & Header */}
-      <div style={{ padding: '12px 14px 8px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--color-surface)', borderRight: '1px solid var(--color-border)' }}>
+      {/* Top Header: Title & Count */}
+      <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{
-            fontFamily: 'var(--font-label)',
-            fontSize: '0.68rem',
+            fontSize: '11px',
             fontWeight: 700,
             letterSpacing: '0.08em',
-            color: '#94a3b8',
-            textTransform: 'uppercase'
+            textTransform: 'uppercase',
+            color: 'var(--text-secondary)',
           }}>
-            Lunar Landing Sites
+            Candidate Sites
           </span>
           <span style={{
             fontFamily: 'var(--font-mono)',
-            fontSize: '0.64rem',
-            background: 'rgba(56, 189, 248, 0.1)',
-            color: '#38bdf8',
+            fontSize: '11px',
+            color: 'var(--color-cyan)',
+            background: 'var(--color-cyan-subtle)',
             padding: '1px 6px',
-            borderRadius: '10px',
-            fontWeight: 600
+            borderRadius: 'var(--radius-pill)',
+            fontWeight: 600,
           }}>
             {filteredSites.length} of {sites.length}
           </span>
         </div>
 
-        {/* Search Input */}
-        <input
-          type="text"
-          placeholder="Search crater or coordinates…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{
-            fontFamily: 'var(--font-ui)',
-            width: '100%',
-            background: 'rgba(15, 23, 42, 0.8)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '6px',
-            padding: '6px 10px',
-            color: '#f8fafc',
-            fontSize: '0.72rem',
-            outline: 'none',
-            marginBottom: '8px'
-          }}
-        />
+        {/* Search Bar with Lucide Search Icon */}
+        <div style={{ position: 'relative' }}>
+          <Search size={14} strokeWidth={1.5} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }} />
+          <input
+            type="text"
+            placeholder="Search crater or coordinates…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              width: '100%',
+              background: 'var(--color-panel)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
+              padding: '7px 10px 7px 32px',
+              color: 'var(--text-primary)',
+              fontSize: '12px',
+              outline: 'none',
+              fontFamily: 'var(--font-sans)',
+              transition: 'border-color 150ms ease',
+            }}
+          />
+        </div>
 
-        {/* Filter Pills */}
-        <div style={{ display: 'flex', gap: '4px', overflowX: 'auto', paddingBottom: '4px' }}>
+        {/* Filter Segmented Control */}
+        <div className="segmented-control" style={{ width: '100%', justifyContent: 'space-between' }}>
           {[
             { id: 'all', label: 'All' },
             { id: 'artemis', label: 'Artemis' },
@@ -148,18 +116,8 @@ export default function SiteSelector({ sites, selectedSite, onSelect }) {
             <button
               key={tab.id}
               onClick={() => setFilter(tab.id)}
-              style={{
-                fontFamily: 'var(--font-ui)',
-                background: filter === tab.id ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255,255,255,0.04)',
-                color: filter === tab.id ? '#38bdf8' : '#64748b',
-                border: filter === tab.id ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid transparent',
-                borderRadius: '4px',
-                padding: '3px 8px',
-                fontSize: '0.64rem',
-                cursor: 'pointer',
-                fontWeight: 600,
-                whiteSpace: 'nowrap'
-              }}
+              className={`segmented-item ${filter === tab.id ? 'active' : ''}`}
+              style={{ flex: 1, justifyContent: 'center', padding: '4px 6px', fontSize: '11px' }}
             >
               {tab.label}
             </button>
@@ -168,88 +126,72 @@ export default function SiteSelector({ sites, selectedSite, onSelect }) {
       </div>
 
       {/* Sites List */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '6px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
         {filteredSites.map(site => {
           const isSelected = selectedSite?.id === site.id
-          const isLimited = site.coverage === 'limited'
           const score = calculateScore(site)
-          const sunPct = ((site.sunlight_fraction ?? 0) * 100).toFixed(0)
-          const earthPct = ((site.geometric_earth_visibility_fraction ?? 0) * 100).toFixed(0)
+          const sunPct = (site.sunlight_fraction ?? 0) * 100
+          const earthPct = (site.geometric_earth_visibility_fraction ?? 0) * 100
 
           return (
             <div
               key={site.id}
               onClick={() => onSelect(site)}
-              className={isLimited ? 'limited-hatch' : ''}
               style={{
                 padding: '10px 12px',
-                borderRadius: '6px',
-                marginBottom: '6px',
+                borderRadius: 'var(--radius-md)',
+                marginBottom: '4px',
                 cursor: 'pointer',
-                background: isSelected
-                  ? 'linear-gradient(135deg, rgba(14, 165, 233, 0.18) 0%, rgba(30, 41, 59, 0.8) 100%)'
-                  : 'rgba(15, 23, 42, 0.45)',
-                border: isSelected ? '1px solid rgba(56, 189, 248, 0.5)' : '1px solid rgba(255,255,255,0.04)',
-                boxShadow: isSelected ? '0 0 12px rgba(56, 189, 248, 0.15)' : 'none',
-                transition: 'all 0.15s ease',
+                background: isSelected ? 'var(--color-panel-elevated)' : 'transparent',
+                border: isSelected ? '1px solid var(--color-cyan-border)' : '1px solid transparent',
+                borderLeft: isSelected ? '3px solid var(--color-cyan)' : '3px solid transparent',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '5px',
+                transition: 'all 150ms cubic-bezier(0.4, 0, 0.2, 1)',
               }}
             >
-              {/* Row 1: Site Title & Score Pill */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '6px', marginBottom: '4px' }}>
-                <div style={{
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 700,
-                  fontSize: '0.8rem',
-                  color: isSelected ? '#38bdf8' : '#f1f5f9',
-                  lineHeight: 1.25
+              {/* Row 1: Site Title + Score Badge */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                <span style={{
+                  fontSize: '13px',
+                  fontWeight: isSelected ? 700 : 600,
+                  color: isSelected ? 'var(--color-cyan)' : 'var(--text-primary)',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
                 }}>
                   {site.name}
-                </div>
-                <div style={{
+                </span>
+
+                <span style={{
                   fontFamily: 'var(--font-mono)',
-                  background: score >= 85 ? 'rgba(34, 197, 94, 0.15)' : score >= 70 ? 'rgba(251, 191, 36, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                  color: score >= 85 ? '#4ade80' : score >= 70 ? '#fbbf24' : '#f87171',
-                  border: `1px solid ${score >= 85 ? 'rgba(34, 197, 94, 0.3)' : score >= 70 ? 'rgba(251, 191, 36, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
-                  borderRadius: '4px',
-                  padding: '1px 5px',
-                  fontSize: '0.64rem',
+                  fontSize: '12px',
                   fontWeight: 700,
-                  flexShrink: 0
+                  color: score >= 85 ? 'var(--color-safe)' : score >= 70 ? 'var(--color-caution)' : 'var(--color-hazard)',
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  padding: '1px 6px',
+                  borderRadius: '4px',
                 }}>
                   {score}
-                </div>
+                </span>
               </div>
 
-              {/* Row 2: Badges and Coordinates */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <div style={{ fontSize: '0.64rem', color: '#64748b', fontFamily: 'var(--font-mono)' }}>
+              {/* Row 2: Mono Coordinates + Outlined Status Chip */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
                   {formatCoord(site.lat_deg, 'N', 'S')}, {formatCoord(site.lon_deg, 'E', 'W')}
-                </div>
-                <CoverageBadge coverage={site.coverage} />
+                </span>
+                <StatusChip coverage={site.coverage} />
               </div>
 
-              {/* Row 3: Visual Gauges (Sunlight & Earth Line of Sight) */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                {/* Sun Bar */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.62rem', color: '#94a3b8', marginBottom: '2px', fontFamily: 'var(--font-mono)' }}>
-                    <span>☀️ Sun</span>
-                    <span style={{ color: '#fbbf24', fontWeight: 600 }}>{sunPct}%</span>
-                  </div>
-                  <div style={{ height: '3px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px', overflow: 'hidden' }}>
-                    <div style={{ width: `${sunPct}%`, height: '100%', background: '#fbbf24' }} />
-                  </div>
+              {/* Tiny Two-Segment Sparkline for Sun / Earth Coverage */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '2px' }}>
+                <div style={{ flex: 1, height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden', display: 'flex' }}>
+                  <div style={{ width: `${sunPct}%`, height: '100%', background: 'var(--color-caution)' }} title={`Sunlight: ${sunPct.toFixed(0)}%`} />
                 </div>
-
-                {/* Earth Bar */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.62rem', color: '#94a3b8', marginBottom: '2px', fontFamily: 'var(--font-mono)' }}>
-                    <span>🌍 Earth</span>
-                    <span style={{ color: '#38bdf8', fontWeight: 600 }}>{earthPct}%</span>
-                  </div>
-                  <div style={{ height: '3px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px', overflow: 'hidden' }}>
-                    <div style={{ width: `${earthPct}%`, height: '100%', background: '#38bdf8' }} />
-                  </div>
+                <div style={{ flex: 1, height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden', display: 'flex' }}>
+                  <div style={{ width: `${earthPct}%`, height: '100%', background: 'var(--color-cyan)' }} title={`Earth Comms: ${earthPct.toFixed(0)}%`} />
                 </div>
               </div>
             </div>
@@ -257,8 +199,8 @@ export default function SiteSelector({ sites, selectedSite, onSelect }) {
         })}
 
         {filteredSites.length === 0 && (
-          <div style={{ padding: '20px', textAlign: 'center', color: '#64748b', fontSize: '0.74rem' }}>
-            No landing sites match query
+          <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '13px' }}>
+            No landing sites match search criteria
           </div>
         )}
       </div>
