@@ -17,14 +17,17 @@
       "run_id": "run_shackleton_connecting_ridge_2026-04-01_2026-05-01_600s",
       "result_sha256": "ae8f8b2bbdcbb3fe27bcce8c9931a79755f1f1164891c21565a06b8f7db835fc",
       "static_file": "data/shackleton_connecting_ridge_2026.json",
-      "mesh_file": "data/hero_terrains/shackleton_connecting_ridge_mesh.json",
+      "mesh_file": "data/terrains/shackleton_connecting_ridge_mesh.json",
       "sunlight_fraction": 0.3818560518398519,
       "total_sunlight_hours": 275.0,
       "longest_darkness_hours": 316.8,
       "geometric_earth_visibility_fraction": 0.07174265216385096,
       "longest_earth_blackout_hours": 435.0,
       "max_solar_elevation_deg": -0.7785831953044374,
-      "min_soc": 0.0
+      "min_soc": 0.0,
+      "mean_slope_deg": 22.43,
+      "elevation_span_m": 1529.05,
+      "landing_safety_score": 21.5
     },
     {
       "id": "shackleton_peak",
@@ -37,14 +40,17 @@
       "run_id": "run_shackleton_peak_2026-04-01_2026-05-01_600s",
       "result_sha256": "3f1b9774fb18fceb634811ce8c0f6029093e78d1f87d7e2bca5ed3f968bd5a83",
       "static_file": "data/shackleton_peak_2026.json",
-      "mesh_file": "data/hero_terrains/shackleton_peak_mesh.json",
+      "mesh_file": "data/terrains/shackleton_peak_mesh.json",
       "sunlight_fraction": 0.38116176810923397,
       "total_sunlight_hours": 274.5,
       "longest_darkness_hours": 242.5,
       "geometric_earth_visibility_fraction": 0.0,
       "longest_earth_blackout_hours": 720.0,
       "max_solar_elevation_deg": -0.953824662219034,
-      "min_soc": 0.0
+      "min_soc": 0.0,
+      "mean_slope_deg": 19.49,
+      "elevation_span_m": 1312.77,
+      "landing_safety_score": 31.8
     },
     {
       "id": "de_gerlache_rim_1",
@@ -57,14 +63,17 @@
       "run_id": "run_de_gerlache_rim_1_2026-04-01_2026-05-01_600s",
       "result_sha256": "57f65759e0bfaa2523c9de61bbe0de6c5cea36f8896fd52619efe5c4763fbca5",
       "static_file": "data/de_gerlache_rim_1_2026.json",
-      "mesh_file": "data/hero_terrains/de_gerlache_rim_1_mesh.json",
+      "mesh_file": "data/terrains/de_gerlache_rim_1_mesh.json",
       "sunlight_fraction": 0.0,
       "total_sunlight_hours": 0.0,
       "longest_darkness_hours": 720.0,
       "geometric_earth_visibility_fraction": 0.23952788706317982,
       "longest_earth_blackout_hours": 377.3,
       "max_solar_elevation_deg": null,
-      "min_soc": 0.0
+      "min_soc": 0.0,
+      "mean_slope_deg": 12.22,
+      "elevation_span_m": 701.53,
+      "landing_safety_score": 57.2
     },
     {
       "id": "de_gerlache_rim_2",
@@ -77,14 +86,17 @@
       "run_id": "run_de_gerlache_rim_2_2026-04-01_2026-05-01_600s",
       "result_sha256": "546b69fbbf621ac7a0416babb47117246c0ce3f5f193177bf014a9120df4dcc8",
       "static_file": "data/de_gerlache_rim_2_2026.json",
-      "mesh_file": null,
+      "mesh_file": "data/terrains/de_gerlache_rim_2_mesh.json",
       "sunlight_fraction": 0.34413330247627866,
       "total_sunlight_hours": 247.8,
       "longest_darkness_hours": 432.2,
       "geometric_earth_visibility_fraction": 0.4343901874566073,
       "longest_earth_blackout_hours": 303.5,
       "max_solar_elevation_deg": 0.6148199377232664,
-      "min_soc": 0.0
+      "min_soc": 0.0,
+      "mean_slope_deg": 13.21,
+      "elevation_span_m": 708.08,
+      "landing_safety_score": 53.8
     },
     {
       "id": "connecting_ridge_ext",
@@ -97,14 +109,17 @@
       "run_id": "run_connecting_ridge_ext_2026-04-01_2026-05-01_600s",
       "result_sha256": "4d514c05ebda23c641857d1192e41b279bb34a6ac90d8c44511bb269fb2e2a4e",
       "static_file": "data/connecting_ridge_ext_2026.json",
-      "mesh_file": null,
+      "mesh_file": "data/terrains/connecting_ridge_ext_mesh.json",
       "sunlight_fraction": 0.0,
       "total_sunlight_hours": 0.0,
       "longest_darkness_hours": 720.0,
       "geometric_earth_visibility_fraction": 0.39018745660726684,
       "longest_earth_blackout_hours": 321.2,
       "max_solar_elevation_deg": null,
-      "min_soc": 0.0
+      "min_soc": 0.0,
+      "mean_slope_deg": 8.52,
+      "elevation_span_m": 318.62,
+      "landing_safety_score": 70.2
     },
     {
       "id": "malapert_mountain",
@@ -117,14 +132,17 @@
       "run_id": "run_malapert_mountain_2026-04-01_2026-05-01_600s",
       "result_sha256": "dfbfbf8c1c07b2535b91a12938339819986636114f8d4e09b460b116afba92ad",
       "static_file": "data/malapert_mountain_2026.json",
-      "mesh_file": null,
+      "mesh_file": "data/terrains/malapert_mountain_mesh.json",
       "sunlight_fraction": 0.436241610738255,
       "total_sunlight_hours": 314.2,
       "longest_darkness_hours": 405.8,
       "geometric_earth_visibility_fraction": 0.6317981948623004,
       "longest_earth_blackout_hours": 223.3,
       "max_solar_elevation_deg": 3.0830978238632976,
-      "min_soc": 0.0
+      "min_soc": 0.0,
+      "mean_slope_deg": 31.67,
+      "elevation_span_m": 1415.88,
+      "landing_safety_score": 0.0
     },
     {
       "id": "haworth_rim",
@@ -137,14 +155,17 @@
       "run_id": "run_haworth_rim_2026-04-01_2026-05-01_600s",
       "result_sha256": "1d4cd65700b6c0f41e1c7d59091a34ddefdff84fff6df0927a899bc3dfbbc9e6",
       "static_file": "data/haworth_rim_2026.json",
-      "mesh_file": null,
+      "mesh_file": "data/terrains/haworth_rim_mesh.json",
       "sunlight_fraction": 0.36449895857440406,
       "total_sunlight_hours": 262.5,
       "longest_darkness_hours": 457.5,
       "geometric_earth_visibility_fraction": 0.5019671372367508,
       "longest_earth_blackout_hours": 281.8,
       "max_solar_elevation_deg": 1.186723924774887,
-      "min_soc": 0.0
+      "min_soc": 0.0,
+      "mean_slope_deg": 13.48,
+      "elevation_span_m": 851.08,
+      "landing_safety_score": 52.8
     },
     {
       "id": "nobile_rim_1",
@@ -157,14 +178,17 @@
       "run_id": "run_nobile_rim_1_2026-04-01_2026-05-01_600s",
       "result_sha256": "a32946fef20ac1205ee69746e79149cf1be142a9d583091d0fbfb171737df8c6",
       "static_file": "data/nobile_rim_1_2026.json",
-      "mesh_file": null,
+      "mesh_file": "data/terrains/nobile_rim_1_mesh.json",
       "sunlight_fraction": 0.44966442953020136,
       "total_sunlight_hours": 323.8,
       "longest_darkness_hours": 396.2,
       "geometric_earth_visibility_fraction": 0.6058782689192317,
       "longest_earth_blackout_hours": 239.2,
       "max_solar_elevation_deg": 3.423720266785733,
-      "min_soc": 0.0
+      "min_soc": 0.0,
+      "mean_slope_deg": 13.94,
+      "elevation_span_m": 381.61,
+      "landing_safety_score": 51.2
     },
     {
       "id": "amundsen_rim",
@@ -177,14 +201,17 @@
       "run_id": "run_amundsen_rim_2026-04-01_2026-05-01_600s",
       "result_sha256": "53e1267193a0f756b58ea214df0e8c90c849501a6b4e724091b69e016adef84d",
       "static_file": "data/amundsen_rim_2026.json",
-      "mesh_file": null,
+      "mesh_file": "data/terrains/amundsen_rim_mesh.json",
       "sunlight_fraction": 0.4633186762323536,
       "total_sunlight_hours": 333.7,
       "longest_darkness_hours": 386.3,
       "geometric_earth_visibility_fraction": 0.436241610738255,
       "longest_earth_blackout_hours": 315.2,
       "max_solar_elevation_deg": 4.188388191006686,
-      "min_soc": 0.0
+      "min_soc": 0.0,
+      "mean_slope_deg": 9.99,
+      "elevation_span_m": 365.49,
+      "landing_safety_score": 65.0
     },
     {
       "id": "faustini_rim_a",
@@ -197,14 +224,17 @@
       "run_id": "run_faustini_rim_a_2026-04-01_2026-05-01_600s",
       "result_sha256": "414070e527843b9d6ef44c9eb322ea8bf9c94b9a3839ddc712b297115c32f826",
       "static_file": "data/faustini_rim_a_2026.json",
-      "mesh_file": null,
+      "mesh_file": "data/terrains/faustini_rim_a_mesh.json",
       "sunlight_fraction": 0.4174959500115714,
       "total_sunlight_hours": 300.7,
       "longest_darkness_hours": 418.8,
       "geometric_earth_visibility_fraction": 0.43462161536681326,
       "longest_earth_blackout_hours": 311.0,
       "max_solar_elevation_deg": 1.4980534117905677,
-      "min_soc": 0.0
+      "min_soc": 0.0,
+      "mean_slope_deg": 10.6,
+      "elevation_span_m": 343.45,
+      "landing_safety_score": 62.9
     },
     {
       "id": "apollo_11",
@@ -217,14 +247,17 @@
       "run_id": "run_apollo_11_2026-04-01_2026-05-01_600s",
       "result_sha256": "da3f1ea2c2c8ea61845082e146baa7490ad9ca97801e7744acf32f31231de8c1",
       "static_file": "data/apollo_11_2026.json",
-      "mesh_file": null,
+      "mesh_file": "data/terrains/apollo_11_mesh.json",
       "sunlight_fraction": 0.5105299699143717,
       "total_sunlight_hours": 367.7,
       "longest_darkness_hours": 352.3,
       "geometric_earth_visibility_fraction": 1.0,
       "longest_earth_blackout_hours": 0.0,
       "max_solar_elevation_deg": 89.25044091718786,
-      "min_soc": 0.0
+      "min_soc": 0.0,
+      "mean_slope_deg": 1.96,
+      "elevation_span_m": 55.73,
+      "landing_safety_score": 93.1
     },
     {
       "id": "apollo_12",
@@ -237,14 +270,17 @@
       "run_id": "run_apollo_12_2026-04-01_2026-05-01_600s",
       "result_sha256": "ed5d939ba9f33878688ee724e7607eee651830cfb26cb0390f82163aabed1e27",
       "static_file": "data/apollo_12_2026.json",
-      "mesh_file": null,
+      "mesh_file": "data/terrains/apollo_12_mesh.json",
       "sunlight_fraction": 0.5100671140939598,
       "total_sunlight_hours": 367.3,
       "longest_darkness_hours": 352.7,
       "geometric_earth_visibility_fraction": 1.0,
       "longest_earth_blackout_hours": 0.0,
       "max_solar_elevation_deg": 86.00497717732006,
-      "min_soc": 0.0
+      "min_soc": 0.0,
+      "mean_slope_deg": 2.18,
+      "elevation_span_m": 45.7,
+      "landing_safety_score": 92.4
     },
     {
       "id": "apollo_17",
@@ -257,14 +293,17 @@
       "run_id": "run_apollo_17_2026-04-01_2026-05-01_600s",
       "result_sha256": "17c8884e3f1981ebc588edf98135a5642d50dbd3c249957643f5c40951a9d399",
       "static_file": "data/apollo_17_2026.json",
-      "mesh_file": null,
+      "mesh_file": "data/terrains/apollo_17_mesh.json",
       "sunlight_fraction": 0.5126128211062254,
       "total_sunlight_hours": 369.2,
       "longest_darkness_hours": 350.8,
       "geometric_earth_visibility_fraction": 1.0,
       "longest_earth_blackout_hours": 0.0,
       "max_solar_elevation_deg": 71.22045624996038,
-      "min_soc": 0.0
+      "min_soc": 0.0,
+      "mean_slope_deg": 22.3,
+      "elevation_span_m": 951.22,
+      "landing_safety_score": 21.9
     },
     {
       "id": "change_4",
@@ -277,14 +316,17 @@
       "run_id": "run_change_4_2026-04-01_2026-05-01_600s",
       "result_sha256": "e153f24ddf20988956d90f2c3969f2d6d6d91e2b13d13d9e7272cfc59f98285b",
       "static_file": "data/change_4_2026.json",
-      "mesh_file": null,
+      "mesh_file": "data/terrains/change_4_mesh.json",
       "sunlight_fraction": 0.4864614672529507,
       "total_sunlight_hours": 350.3,
       "longest_darkness_hours": 217.7,
       "geometric_earth_visibility_fraction": 0.0,
       "longest_earth_blackout_hours": 720.0,
       "max_solar_elevation_deg": 43.39908177596154,
-      "min_soc": 0.0
+      "min_soc": 0.0,
+      "mean_slope_deg": 6.58,
+      "elevation_span_m": 364.85,
+      "landing_safety_score": 77.0
     }
   ],
   "agreement_benchmark": {
