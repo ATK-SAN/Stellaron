@@ -858,6 +858,8 @@ export default function MissionRehearsal() {
             surfaceMetrics={result?.baseline?.surface?.metrics}
             qualityTier={qualityTier}
             onQualityChange={setQualityTier}
+            activeDemo={activeDemo}
+            onSelectDemo={handleRunDemo}
           />
         </div>
       )}
