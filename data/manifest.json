@@ -1,9 +1,62 @@
 {
   "manifest_version": "1.0.0",
   "created_at": "2026-11-14T06:45:00Z",
-  "spk_kernels": {},
-  "pck_kernels": {},
-  "lsk_kernels": {},
+  "spk_kernels": {
+    "de421.bsp": {
+      "source_url": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/a_old_versions/de421.bsp",
+      "version": "DE421",
+      "description": "JPL Planetary and Lunar Ephemeris DE421 (1900 to 2050)",
+      "retrieval_timestamp": "2026-11-14T07:25:06Z",
+      "sha256": "08b20db2ae22488650641c5a9033e5bfda4b1c4b440cfeaf20f621cfa18ecdb3",
+      "size_bytes": 16790528,
+      "local_path": "data/raw/de421.bsp"
+    }
+  },
+  "pck_kernels": {
+    "pck00010.tpc": {
+      "source_url": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/pck00010.tpc",
+      "version": "pck00010",
+      "description": "IAU generic planetary constants kernel (PCK)",
+      "retrieval_timestamp": "2026-11-14T07:02:18Z",
+      "sha256": "59468328349aa730d18bf1f8d7e86efe6e40b75dfb921908f99321b3a7a701d2",
+      "size_bytes": 126143,
+      "local_path": "data/raw/pck00010.tpc"
+    }
+  },
+  "lsk_kernels": {
+    "naif0012.tls": {
+      "source_url": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/naif0012.tls",
+      "version": "naif0012",
+      "description": "Standard generic leapseconds kernel (LSK)",
+      "retrieval_timestamp": "2026-11-14T07:01:59Z",
+      "sha256": "678e32bdb5a744117a467cd9601cd6b373f0e9bc9bbde1371d5eee39600a039b",
+      "size_bytes": 5257,
+      "local_path": "data/raw/naif0012.tls"
+    }
+  },
   "dem_products": {},
-  "derived_products": {}
+  "derived_products": {},
+  "last_updated": "2026-11-14T07:25:06Z",
+  "fk_kernels": {
+    "moon_080317.tf": {
+      "source_url": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/fk/satellites/moon_080317.tf",
+      "version": "080317",
+      "description": "Lunar frame kernel defining MOON_ME and MOON_PA frames",
+      "retrieval_timestamp": "2026-11-14T07:02:23Z",
+      "sha256": "78732477b96f9863e7b0d65bcee3c22b8707ca5ed0db56d1173319cb2e8c7993",
+      "size_bytes": 21437,
+      "local_path": "data/raw/moon_080317.tf"
+    }
+  },
+  "pck_binary_kernels": {
+    "moon_pa_de421_1900-2050.bpc": {
+      "source_url": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/moon_pa_de421_1900-2050.bpc",
+      "version": "de421_1900-2050",
+      "description": "High-precision lunar orientation binary PCK (DE421 reference)",
+      "retrieval_timestamp": "2026-11-14T07:04:44Z",
+      "sha256": "656f90616403d75a75f0cd6c8830fc5b44f8cb4facb5ccb8915e752b397520cf",
+      "size_bytes": 1770496,
+      "local_path": "data/raw/moon_pa_de421_1900-2050.bpc"
+    }
+  }
 }
