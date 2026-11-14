@@ -12,7 +12,7 @@ import uuid
 from typing import Dict, List, Optional, Tuple, Any
 import numpy as np
 
-from engine.geometry import R_MOON_M, enu_basis, body_az_el
+from engine.geometry import R_MOON_M, enu_basis, body_az_el, surface_site_vector
 from engine.celestial import CelestialEngine
 from engine.horizon import horizon_profile
 from engine.intervals import (

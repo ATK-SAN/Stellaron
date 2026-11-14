@@ -1,0 +1,10 @@
+{
+  "status": "Validated",
+  "iou": 0.9677,
+  "science_ridge_elevation_deg": 11.305,
+  "rendered_ridge_elevation_deg": 11.305,
+  "discrepancy_deg": 0.0,
+  "samples_tested": 61,
+  "tolerance_deg": 0.1,
+  "agreement_pass": true
+}

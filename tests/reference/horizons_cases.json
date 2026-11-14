@@ -1,0 +1,6 @@
+{
+  "description": "JPL Horizons ephemeris comparison test cases supplied by user for Gate G4 independent verification.",
+  "status": "TODO(verify)",
+  "reference_system": "Horizons lunar topocentric / MOON_ME compatible frame",
+  "cases": []
+}
