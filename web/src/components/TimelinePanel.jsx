@@ -42,31 +42,35 @@ export default function TimelinePanel({ siteData, site }) {
     if (!siteData) return { chartData: [], transitions: [], refHour: 0 }
 
     const ts = siteData.time_series || {}
-    const times = ts.times_et || []
+    // Actual JSON uses times_utc (ISO strings), not times_et
+    const timesUtc = ts.times_utc || []
     const sunVis = ts.sun_visible || []
     const earthVis = ts.earth_visible || []
 
-    if (!times.length) return { chartData: [], transitions: [], refHour: 0 }
+    if (!timesUtc.length) return { chartData: [], transitions: [], refHour: 0 }
 
-    const refHour = times[0] / 3600
+    // Convert ISO strings to hours-since-start
+    const t0ms = new Date(timesUtc[0]).getTime()
+    const toHours = utcStr => (new Date(utcStr).getTime() - t0ms) / 3_600_000
+    const refHour = 0
 
     // Downsample
-    const n = times.length
+    const n = timesUtc.length
     const step = n > MAX_POINTS ? Math.ceil(n / MAX_POINTS) : 1
     const sampled = []
     for (let i = 0; i < n; i += step) {
       sampled.push({
-        t: Math.round(times[i] / 3600 - refHour),
+        t: parseFloat(toHours(timesUtc[i]).toFixed(2)),
         sun: sunVis[i] ? 1 : 0,
         earth: earthVis[i] ? 1 : 0,
       })
     }
 
-    // Transitions
-    const trans = siteData.refined_transitions || []
+    // Transitions — actual key is siteData.transitions[].utc
+    const trans = siteData.transitions || []
     const transMarkers = trans.map(tr => ({
-      t: Math.round((tr.et ?? tr.time_et ?? 0) / 3600 - refHour),
-      type: tr.type || tr.event || '',
+      t: parseFloat(toHours(tr.utc).toFixed(2)),
+      type: tr.type || '',
     }))
 
     return { chartData: sampled, transitions: transMarkers, refHour }
@@ -94,7 +98,7 @@ export default function TimelinePanel({ siteData, site }) {
             {summaryMetrics.sunPct.toFixed(1)}%
           </div>
           <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: 2 }}>
-            {((summaryMetrics.sunPct / 100) * (siteData?.time_series?.times_et?.length ?? 0) * ((siteData?.study_interval_s ?? 600) / 3600)).toFixed(0)}h sunlit
+          {((summaryMetrics.sunPct / 100) * (siteData?.time_series?.times_utc?.length ?? 0) * ((siteData?.interval?.step_s ?? 600) / 3600)).toFixed(0)}h sunlit
           </div>
         </div>
         <div className="metric-card">

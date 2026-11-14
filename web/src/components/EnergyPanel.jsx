@@ -54,30 +54,39 @@ export default function EnergyPanel({ siteData, site }) {
 
   const { socData, deficitIntervals } = useMemo(() => {
     const ts = siteData?.time_series || {}
-    const times = ts.times_et || []
-    const socHistory = siteData?.soc_history || ts.soc_history || []
-    const deficits = siteData?.deficit_intervals || energy?.deficit_intervals || []
+    // soc_history lives in metrics.energy (added in runner fix)
+    const socHistory = energy?.soc_history || []
+    const socStep = energy?.soc_history_step ?? 1
+    // deficit_intervals is an array of {start_s, end_s, duration_s, ...} objects
+    const deficits = energy?.deficit_intervals || []
 
-    if (!times.length || !socHistory.length) {
+    // Build time axis from times_utc, matched to soc_history (downsampled by socStep)
+    const timesUtc = ts.times_utc || []
+    const t0ms = timesUtc.length ? new Date(timesUtc[0]).getTime() : 0
+
+    if (!socHistory.length) {
       return { socData: [], deficitIntervals: deficits }
     }
 
-    const n = Math.min(times.length, socHistory.length)
-    const refTime = times[0] / 3600
-
+    const n = socHistory.length
     const step = n > MAX_POINTS ? Math.ceil(n / MAX_POINTS) : 1
     const sampled = []
     for (let i = 0; i < n; i += step) {
-      const soc = socHistory[i] ?? 0
-      sampled.push({ t: Math.round(times[i] / 3600 - refTime), soc })
+      // Map soc_history index → original time index
+      const origIdx = i * socStep
+      const tHours = timesUtc.length && origIdx < timesUtc.length
+        ? (new Date(timesUtc[origIdx]).getTime() - t0ms) / 3_600_000
+        : origIdx * socStep * 10 / 3600  // fallback: step_s=600
+      sampled.push({ t: parseFloat(tHours.toFixed(2)), soc: socHistory[i] ?? 0 })
     }
 
-    // Normalize deficit intervals to relative hours
-    const defNorm = deficits.map(d => ({
-      start: Math.round((d.start_et ?? d.start ?? 0) / 3600 - refTime),
-      end: Math.round((d.end_et ?? d.end ?? 0) / 3600 - refTime),
-    }))
-
+    // Convert deficit intervals (epoch seconds ET) to relative hours
+    // start_s / end_s are ET epoch seconds; times_utc[0] is roughly ET t0
+    // Best we can do without ET-to-UTC table: show duration from start_s
+    const defNorm = deficits.map(d => {
+      const durH = (d.duration_s ?? 0) / 3600
+      return { ...d, durH: parseFloat(durH.toFixed(1)) }
+    })
     return { socData: sampled, deficitIntervals: defNorm }
   }, [siteData, energy])
 
@@ -236,19 +245,23 @@ export default function EnergyPanel({ siteData, site }) {
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                   <th style={{ padding: '5px 8px', textAlign: 'left' }}>#</th>
-                  <th style={{ padding: '5px 8px', textAlign: 'right' }}>Start (h)</th>
-                  <th style={{ padding: '5px 8px', textAlign: 'right' }}>End (h)</th>
+                  <th style={{ padding: '5px 8px', textAlign: 'right' }}>Min SoC</th>
                   <th style={{ padding: '5px 8px', textAlign: 'right' }}>Duration</th>
+                  <th style={{ padding: '5px 8px', textAlign: 'right' }}>Censored?</th>
                 </tr>
               </thead>
               <tbody>
                 {deficitIntervals.map((d, i) => (
                   <tr key={i} style={{ borderBottom: '1px solid rgba(42,42,74,0.4)' }}>
                     <td style={{ padding: '4px 8px', color: 'var(--danger)' }}>{i + 1}</td>
-                    <td style={{ padding: '4px 8px', textAlign: 'right', fontFamily: 'monospace' }}>{d.start}</td>
-                    <td style={{ padding: '4px 8px', textAlign: 'right', fontFamily: 'monospace' }}>{d.end}</td>
+                    <td style={{ padding: '4px 8px', textAlign: 'right', fontFamily: 'monospace' }}>
+                      {d.min_soc_in_interval != null ? `${(d.min_soc_in_interval * 100).toFixed(1)}%` : '—'}
+                    </td>
                     <td style={{ padding: '4px 8px', textAlign: 'right', color: 'var(--warning)' }}>
-                      {d.end - d.start}h
+                      {d.durH != null ? `${d.durH}h` : d.duration_s != null ? `${(d.duration_s / 3600).toFixed(1)}h` : '—'}
+                    </td>
+                    <td style={{ padding: '4px 8px', textAlign: 'right', fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                      {d.censored ? 'yes' : 'no'}
                     </td>
                   </tr>
                 ))}

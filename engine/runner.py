@@ -213,13 +213,18 @@ def run_site(
             eta_d=float(energy_config.get("eta_d", 0.92)),
             soc_min=float(energy_config.get("soc_min", 0.20)),
         )
+        # Downsample soc_history to max 2000 points for static JSON size
+        full_soc = batt_sim["soc_history"]
+        soc_step = max(1, len(full_soc) // 2000)
         energy_results = {
             "generated_wh": batt_sim["generated_wh"],
             "consumed_wh": batt_sim["consumed_wh"],
             "min_soc": batt_sim["min_soc"],
             "time_below_reserve_s": batt_sim["time_below_reserve_s"],
             "deficit_intervals": batt_sim["deficit_intervals"],
-            "final_soc": float(batt_sim["soc_history"][-1]),
+            "final_soc": float(full_soc[-1]),
+            "soc_history": [round(float(v), 4) for v in full_soc[::soc_step]],
+            "soc_history_step": soc_step,
         }
 
     # 7. Limitations and Assumptions
