@@ -17,12 +17,15 @@ pip install -r requirements.txt
 # 2. Download SPICE kernels (once)
 python scripts/fetch_data.py
 
-# 3. Run all tests (G1–G6)
+# 3. Run all tests
 $env:PYTHONPATH = "."
 python -m pytest tests/ -v
-# → 47 passed
+# → 116 passed
 
-# 4. Precompute static site library (2026-04-01 → 2026-05-01)
+# 4. Run an offline Mission Rehearsal
+python -m rehearsal.run <mission_plan.json> <results.json>
+
+# 5. Precompute static site library (2026-04-01 → 2026-05-01)
 python -m precompute.generate_library
 # → data/processed/*.json + web/public/data/*.json
 
@@ -56,6 +59,17 @@ stellaron/
 │
 ├── precompute/
 │   └── generate_library.py   # Batch runs all 14 sites → static JSON
+│
+├── rehearsal/        # Mission Rehearsal Layer (Physics & Rehearsal Engine)
+│   ├── schema.py     # Upload JSON validation & normalisation (≤ 1 MB)
+│   ├── timeline.py   # Deterministic UTC timeline & delay perturbation model
+│   ├── surface.py    # Surface stay physical evaluation, SoC & verdict logic
+│   ├── slip.py       # Landing date sweep, tolerance & recovery detection
+│   ├── gates.py      # 4 decision gates (PRE_LAUNCH to PRE_DESCENT)
+│   ├── scenarios.py  # Perturbation application & neutral templated text
+│   ├── compare.py    # Multi-scenario & date comparisons (sorted by date)
+│   ├── choreography.py # Keyframed 3D trajectory sequence with SPICE
+│   └── run.py        # Complete CLI runner pipeline → deterministic SHA-256
 │
 ├── api/
 │   └── main.py       # FastAPI server (serves precomputed data)

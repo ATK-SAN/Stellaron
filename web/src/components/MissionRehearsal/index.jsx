@@ -13,6 +13,7 @@ import { validateMissionPlan, planToJSON, SITE_IDS, DELAY_TYPES } from './schema
 import VerdictBadge from './VerdictBadge'
 import SlipCalendarGrid from './SlipCalendarGrid'
 import DecisionGatesTimeline from './DecisionGatesTimeline'
+import ChoreographyPlayer from './ChoreographyPlayer'
 
 // ─── Site display names ───────────────────────────────────────────────────────
 const SITE_NAMES = {
@@ -330,6 +331,7 @@ export default function MissionRehearsal() {
   const [validation, setValidation] = useState({ valid: false, errors: {} })
   const [result, setResult] = useState(null)
   const [activeDemo, setActiveDemo] = useState(null)
+  const [qualityTier, setQualityTier] = useState('High')
   const fileInputRef = useRef(null)
 
   // Live validation on every change
@@ -453,6 +455,7 @@ export default function MissionRehearsal() {
   const tabs = [
     { id: 'form', label: '📋 Mission Input' },
     { id: 'results', label: '📊 Results', disabled: !result },
+    { id: 'playback', label: '🚀 3D Flight Playback' },
   ]
 
   return (
@@ -832,6 +835,13 @@ export default function MissionRehearsal() {
               )}
             </>
           )}
+        </div>
+      )}
+
+      {/* ─── 3D PLAYBACK TAB ─── */}
+      {tab === 'playback' && (
+        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+          <ChoreographyPlayer qualityTier={qualityTier} onQualityChange={setQualityTier} />
         </div>
       )}
     </div>
