@@ -1,0 +1,33 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pytest_cache/
+
+# Large scientific data files & kernels (Rulebook Section 6.3)
+data/raw/
+*.tif
+*.tiff
+*.bsp
+*.tls
+*.tpc
+*.tf
+*.tar.gz
+*.zip
+
+# Node / Web build artifacts
+web/node_modules/
+web/dist/
+web/.vite/
+
+# Python virtualenvs & distribution
+.venv/
+env/
+dist/
+build/
+*.egg-info/
+
+# System and logs
+.DS_Store
+Thumbs.db
+*.log
