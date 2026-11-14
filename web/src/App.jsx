@@ -11,6 +11,7 @@ import CelestialSimulator from './components/CelestialSimulator'
 import HorizonSkyline from './components/HorizonSkyline'
 import OrthographicPolarMap from './components/OrthographicPolarMap'
 import MissionPlannerHeadline from './components/MissionPlannerHeadline'
+import MissionRehearsal from './components/MissionRehearsal'
 
 // Clean pages / windows
 // 'explorer' | 'celestial' | 'horizon' | 'timeline' | 'energy' | 'nasa' | 'provenance'
@@ -98,6 +99,7 @@ export default function App() {
             { id: 'timeline', label: '📈 Illumination Timeline', icon: '📈' },
             { id: 'energy', label: '⚡ Lander Battery Lab', icon: '⚡' },
             { id: 'nasa', label: '🔬 NASA Cross-Check', icon: '🔬' },
+            { id: 'rehearsal', label: '🛸 Mission Rehearsal', icon: '🛸' },
           ].map(page => (
             <button
               key={page.id}
@@ -769,6 +771,10 @@ export default function App() {
                 <NasaCrossCheckPanel selectedSite={selectedSite} />
               </div>
             </div>
+          )}
+          {/* WINDOW 6: Mission Rehearsal */}
+          {activeWindow === 'rehearsal' && (
+            <MissionRehearsal sites={sites} />
           )}
         </main>
       </div>
