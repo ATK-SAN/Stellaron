@@ -1,4 +1,4 @@
-import { useRef, useMemo, useEffect } from 'react'
+import { useRef, useMemo, useState } from 'react'
 import { Canvas, useFrame, useLoader } from '@react-three/fiber'
 import { OrbitControls, Stars, Html } from '@react-three/drei'
 import * as THREE from 'three'
@@ -14,9 +14,9 @@ function latLonToVec3(lat, lon, r = 1.0) {
   ]
 }
 
-function TexturedMoon({ selectedSite }) {
+function TexturedMoon({ selectedSite, showGrid, showPoles }) {
   const meshRef = useRef()
-  // Load real NASA SVS LROC color mosaic texture from public/textures
+  // Load real NASA SVS LROC color mosaic texture
   const texture = useLoader(THREE.TextureLoader, '/textures/moon_color_1k.jpg')
 
   useMemo(() => {
@@ -31,19 +31,19 @@ function TexturedMoon({ selectedSite }) {
   // Gentle subtle rotation if no site selected
   useFrame((_, delta) => {
     if (meshRef.current && !selectedSite) {
-      meshRef.current.rotation.y += delta * 0.04
+      meshRef.current.rotation.y += delta * 0.03
     }
   })
 
   return (
     <group ref={meshRef}>
+      {/* Lunar Body */}
       <mesh receiveShadow castShadow>
         <sphereGeometry args={[1.0, 64, 64]} />
         <meshStandardMaterial
           map={texture}
           roughness={0.92}
           metalness={0.05}
-          bumpScale={0.03}
         />
       </mesh>
 
@@ -56,6 +56,93 @@ function TexturedMoon({ selectedSite }) {
           opacity={0.06}
           side={THREE.BackSide}
         />
+      </mesh>
+
+      {/* Rotational Axis of the Moon (1.54° axial tilt to ecliptic) */}
+      {showPoles && (
+        <group>
+          {/* Axis Rod */}
+          <mesh position={[0, 0, 0]}>
+            <cylinderGeometry args={[0.003, 0.003, 2.5, 16]} />
+            <meshBasicMaterial color="#38bdf8" transparent opacity={0.6} />
+          </mesh>
+          {/* North Pole Pin */}
+          <group position={[0, 1.05, 0]}>
+            <mesh>
+              <sphereGeometry args={[0.02, 16, 16]} />
+              <meshBasicMaterial color="#38bdf8" />
+            </mesh>
+            <Html distanceFactor={5} position={[0, 0.08, 0]} center>
+              <div style={{
+                background: 'rgba(6, 11, 25, 0.85)',
+                border: '1px solid #38bdf8',
+                borderRadius: '4px',
+                padding: '2px 6px',
+                color: '#38bdf8',
+                fontSize: '10px',
+                fontFamily: 'monospace',
+                whiteSpace: 'nowrap',
+                fontWeight: 700
+              }}>
+                NORTH POLE (+90°)
+              </div>
+            </Html>
+          </group>
+
+          {/* South Pole Pin & Artemis Target Ring */}
+          <group position={[0, -1.05, 0]}>
+            <mesh>
+              <sphereGeometry args={[0.02, 16, 16]} />
+              <meshBasicMaterial color="#fbbf24" />
+            </mesh>
+            <Html distanceFactor={5} position={[0, -0.08, 0]} center>
+              <div style={{
+                background: 'rgba(6, 11, 25, 0.85)',
+                border: '1px solid #fbbf24',
+                borderRadius: '4px',
+                padding: '2px 6px',
+                color: '#fbbf24',
+                fontSize: '10px',
+                fontFamily: 'monospace',
+                whiteSpace: 'nowrap',
+                fontWeight: 700
+              }}>
+                SOUTH POLE (-90°) · Artemis Zone
+              </div>
+            </Html>
+          </group>
+        </group>
+      )}
+
+      {/* Equator Ring (0° Latitude) */}
+      {showGrid && (
+        <group>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[1.004, 1.008, 64]} />
+            <meshBasicMaterial color="#34d399" transparent opacity={0.4} side={THREE.DoubleSide} />
+          </mesh>
+          {/* Equator Label */}
+          <Html distanceFactor={5} position={[1.05, 0, 0]} center>
+            <div style={{
+              background: 'rgba(6, 11, 25, 0.8)',
+              border: '1px solid #34d399',
+              borderRadius: '3px',
+              padding: '1px 5px',
+              color: '#34d399',
+              fontSize: '9px',
+              fontFamily: 'monospace',
+              whiteSpace: 'nowrap'
+            }}>
+              EQUATOR (0° LAT)
+            </div>
+          </Html>
+        </group>
+      )}
+
+      {/* Artemis South Pole Exploration Circle (85°S to 90°S) */}
+      <mesh position={[0, -0.996, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.085, 0.095, 48]} />
+        <meshBasicMaterial color="#fbbf24" transparent opacity={0.35} side={THREE.DoubleSide} />
       </mesh>
     </group>
   )
@@ -103,7 +190,7 @@ function SiteMarker({ site, isSelected, onClick }) {
         />
       </mesh>
 
-      {/* Pulsing beacon target ring for selected site */}
+      {/* Pulsing target ring for selected site */}
       {isSelected && (
         <mesh ref={ringRef} rotation={[Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.035, 0.045, 24]} />
@@ -111,11 +198,11 @@ function SiteMarker({ site, isSelected, onClick }) {
         </mesh>
       )}
 
-      {/* Lightweight label on hover or when selected */}
+      {/* Site Name Label */}
       {isSelected && (
-        <Html distanceFactor={4} position={[0, 0.05, 0]} center>
+        <Html distanceFactor={4} position={[0, 0.06, 0]} center>
           <div style={{
-            background: 'rgba(6, 11, 25, 0.85)',
+            background: 'rgba(6, 11, 25, 0.9)',
             border: `1px solid ${baseColor}`,
             boxShadow: `0 0 12px ${baseColor}60`,
             borderRadius: '4px',
@@ -138,32 +225,21 @@ function SiteMarker({ site, isSelected, onClick }) {
   )
 }
 
-function SouthPoleTargetRing() {
-  // Highlights the Artemis South Pole exploration zone (< 85°S)
-  const pos = [0, -1.005, 0]
-  return (
-    <mesh position={pos} rotation={[Math.PI / 2, 0, 0]}>
-      <ringGeometry args={[0.07, 0.08, 48]} />
-      <meshBasicMaterial color="#38bdf8" transparent opacity={0.25} side={THREE.DoubleSide} />
-    </mesh>
-  )
-}
-
-function Scene({ sites, selectedSite, onSelect }) {
-  const controlsRef = useRef()
-
+function Scene({ sites, selectedSite, onSelect, showGrid, showPoles }) {
   return (
     <>
-      <ambientLight intensity={0.45} />
-      {/* Sunlight vector from simulated solar angle */}
-      <directionalLight position={[6, 3, 5]} intensity={1.6} castShadow />
+      <ambientLight intensity={0.5} />
+      <directionalLight position={[6, 3, 5]} intensity={1.6} />
       <pointLight position={[-6, -4, -4]} intensity={0.25} color="#38bdf8" />
 
       {/* Deep Space Stars */}
       <Stars radius={100} depth={50} count={3000} factor={4} saturation={0} fade speed={1} />
 
-      <TexturedMoon selectedSite={selectedSite} />
-      <SouthPoleTargetRing />
+      <TexturedMoon
+        selectedSite={selectedSite}
+        showGrid={showGrid}
+        showPoles={showPoles}
+      />
 
       {sites.map((site) => (
         <SiteMarker
@@ -175,7 +251,6 @@ function Scene({ sites, selectedSite, onSelect }) {
       ))}
 
       <OrbitControls
-        ref={controlsRef}
         enableZoom={true}
         enablePan={false}
         minDistance={1.4}
@@ -188,22 +263,32 @@ function Scene({ sites, selectedSite, onSelect }) {
 }
 
 export default function HorizonGlobe({ sites, selectedSite, onSelect }) {
+  const [showPoles, setShowPoles] = useState(true)
+  const [showGrid, setShowGrid] = useState(true)
+
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <Canvas
-        camera={{ position: [0, -0.5, 2.3], fov: 45 }}
+        camera={{ position: [0, -0.4, 2.3], fov: 45 }}
         style={{ background: 'radial-gradient(circle at 50% 50%, #0d1326 0%, #050711 100%)' }}
       >
-        <Scene sites={sites} selectedSite={selectedSite} onSelect={onSelect} />
+        <Scene
+          sites={sites}
+          selectedSite={selectedSite}
+          onSelect={onSelect}
+          showGrid={showGrid}
+          showPoles={showPoles}
+        />
       </Canvas>
 
+      {/* Overlay Title */}
       <div style={{
         position: 'absolute',
         top: 10,
         left: 12,
         fontSize: '0.68rem',
         color: '#94a3b8',
-        background: 'rgba(6, 11, 25, 0.7)',
+        background: 'rgba(6, 11, 25, 0.75)',
         backdropFilter: 'blur(8px)',
         padding: '3px 8px',
         borderRadius: '4px',
@@ -214,19 +299,82 @@ export default function HorizonGlobe({ sites, selectedSite, onSelect }) {
         gap: '6px'
       }}>
         <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#38bdf8', boxShadow: '0 0 6px #38bdf8' }} />
-        <span>NASA SVS Global Mosaic · Interactive 3D Orbit</span>
+        <span>3D Lunar Globe · NASA SVS LROC Mosaic</span>
       </div>
 
+      {/* Educational Layers Toggle Controls */}
+      <div style={{
+        position: 'absolute',
+        top: 10,
+        right: 12,
+        display: 'flex',
+        gap: '4px',
+        background: 'rgba(6, 11, 25, 0.8)',
+        backdropFilter: 'blur(8px)',
+        padding: '3px',
+        borderRadius: '5px',
+        border: '1px solid rgba(255,255,255,0.08)'
+      }}>
+        <button
+          onClick={() => setShowPoles(!showPoles)}
+          style={{
+            background: showPoles ? 'rgba(56, 189, 248, 0.25)' : 'transparent',
+            color: showPoles ? '#38bdf8' : '#64748b',
+            border: showPoles ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid transparent',
+            padding: '2px 6px',
+            borderRadius: '3px',
+            fontSize: '0.62rem',
+            cursor: 'pointer',
+            fontWeight: 600
+          }}
+        >
+          {showPoles ? '✓ Poles & Axis' : 'Poles & Axis'}
+        </button>
+        <button
+          onClick={() => setShowGrid(!showGrid)}
+          style={{
+            background: showGrid ? 'rgba(52, 211, 153, 0.25)' : 'transparent',
+            color: showGrid ? '#34d399' : '#64748b',
+            border: showGrid ? '1px solid rgba(52, 211, 153, 0.4)' : '1px solid transparent',
+            padding: '2px 6px',
+            borderRadius: '3px',
+            fontSize: '0.62rem',
+            cursor: 'pointer',
+            fontWeight: 600
+          }}
+        >
+          {showGrid ? '✓ Equator' : 'Equator'}
+        </button>
+      </div>
+
+      {/* Educational Guide Footer */}
       <div style={{
         position: 'absolute',
         bottom: 8,
+        left: 12,
         right: 12,
-        fontSize: '0.64rem',
-        color: '#64748b',
-        pointerEvents: 'none',
-        fontFamily: 'monospace'
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        pointerEvents: 'none'
       }}>
-        Left-Click: Rotate · Scroll: Zoom
+        <div style={{
+          fontSize: '0.62rem',
+          color: '#cbd5e1',
+          background: 'rgba(6, 11, 25, 0.75)',
+          padding: '2px 8px',
+          borderRadius: '4px',
+          fontFamily: 'monospace'
+        }}>
+          Axial Tilt: <span style={{ color: '#38bdf8' }}>1.54°</span> (nearly perpendicular to Sun!)
+        </div>
+        <div style={{
+          fontSize: '0.62rem',
+          color: '#64748b',
+          fontFamily: 'monospace'
+        }}>
+          Drag to rotate · Scroll to zoom
+        </div>
       </div>
     </div>
   )

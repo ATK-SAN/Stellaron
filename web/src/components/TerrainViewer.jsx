@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { OrbitControls, Html } from '@react-three/drei'
 import * as THREE from 'three'
 
 // Hypsometric tint colormap (NASA LOLA scientific elevation standard)
 function getElevationColor(normalized) {
-  // 0.0: deep purple/blue -> 0.25: cyan -> 0.5: green -> 0.75: amber/yellow -> 1.0: red/white
   const color = new THREE.Color()
   if (normalized < 0.2) {
     color.setRGB(0.1 + normalized * 0.5, 0.1, 0.4 + normalized * 1.5)
@@ -54,7 +53,6 @@ function TopographicTerrainMesh({ meshData, renderMode }) {
     for (let i = 0; i < heightsFlat.length; i++) {
       const h = heightsFlat[i]
       const norm = (h - minH) / span
-      // Exaggerate vertical scale slightly for visual clarity of subtle ridges/craters
       positions[i * 3 + 1] = norm * 1.4
 
       if (renderMode === 'elevation') {
@@ -63,13 +61,11 @@ function TopographicTerrainMesh({ meshData, renderMode }) {
         colorArr[i * 3 + 1] = c.g
         colorArr[i * 3 + 2] = c.b
       } else if (renderMode === 'regolith') {
-        // Authentic dusty lunar regolith with highland brightening
         const brightness = 0.28 + norm * 0.45
         colorArr[i * 3] = brightness
         colorArr[i * 3 + 1] = brightness * 0.98
         colorArr[i * 3 + 2] = brightness * 1.02
       } else {
-        // Wireframe single tint
         colorArr[i * 3] = 0.22
         colorArr[i * 3 + 1] = 0.74
         colorArr[i * 3 + 2] = 0.97
@@ -96,7 +92,7 @@ function TopographicTerrainMesh({ meshData, renderMode }) {
       </mesh>
 
       {/* Target Landing Ellipse Beacon at center */}
-      <group position={[0, 0.75, 0]}>
+      <group position={[0, 0.72, 0]}>
         <mesh rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.22, 0.26, 32]} />
           <meshBasicMaterial color="#38bdf8" transparent opacity={0.85} side={THREE.DoubleSide} />
@@ -105,6 +101,44 @@ function TopographicTerrainMesh({ meshData, renderMode }) {
           <circleGeometry args={[0.04, 16]} />
           <meshBasicMaterial color="#fbbf24" />
         </mesh>
+        <Html distanceFactor={6} position={[0, 0.15, 0]} center>
+          <div style={{
+            background: 'rgba(6, 11, 25, 0.85)',
+            border: '1px solid #38bdf8',
+            borderRadius: '3px',
+            padding: '1px 5px',
+            color: '#38bdf8',
+            fontSize: '9px',
+            fontFamily: 'monospace',
+            whiteSpace: 'nowrap'
+          }}>
+            🎯 Touchdown Zone
+          </div>
+        </Html>
+      </group>
+
+      {/* 3D Compass Direction Markers on the Terrain Edge */}
+      <group position={[0, 0.05, 0]}>
+        <Html distanceFactor={7} position={[0, 0, -2.7]} center>
+          <div style={{ color: '#38bdf8', fontSize: '10px', fontWeight: 800, fontFamily: 'monospace' }}>
+            ▲ NORTH (0°)
+          </div>
+        </Html>
+        <Html distanceFactor={7} position={[0, 0, 2.7]} center>
+          <div style={{ color: '#fbbf24', fontSize: '10px', fontWeight: 800, fontFamily: 'monospace' }}>
+            ▼ SOUTH (Pole)
+          </div>
+        </Html>
+        <Html distanceFactor={7} position={[2.7, 0, 0]} center>
+          <div style={{ color: '#94a3b8', fontSize: '10px', fontWeight: 700, fontFamily: 'monospace' }}>
+            ▶ EAST
+          </div>
+        </Html>
+        <Html distanceFactor={7} position={[-2.7, 0, 0]} center>
+          <div style={{ color: '#94a3b8', fontSize: '10px', fontWeight: 700, fontFamily: 'monospace' }}>
+            ◀ WEST
+          </div>
+        </Html>
       </group>
     </group>
   )
@@ -132,7 +166,8 @@ function Scene({ meshData, renderMode }) {
 export default function TerrainViewer({ site, siteData }) {
   const [meshData, setMeshData] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [renderMode, setRenderMode] = useState('elevation') // 'elevation' | 'regolith' | 'wireframe'
+  const [renderMode, setRenderMode] = useState('elevation')
+  const [showColorKey, setShowColorKey] = useState(true)
 
   useEffect(() => {
     if (!site) {
@@ -142,7 +177,6 @@ export default function TerrainViewer({ site, siteData }) {
 
     setLoading(true)
     setMeshData(null)
-    // Every site now has a dedicated terrain mesh in /data/terrains/
     const url = `/${site.mesh_file || `data/terrains/${site.id}_mesh.json`}`
     fetch(url)
       .then(r => {
@@ -155,7 +189,6 @@ export default function TerrainViewer({ site, siteData }) {
       })
       .catch(err => {
         console.warn(`Could not load terrain mesh for ${site.id}:`, err)
-        // Fallback to hero_terrains if available
         fetch(`/data/hero_terrains/${site.id}_mesh.json`)
           .then(r => r.json())
           .then(data => {
@@ -264,8 +297,91 @@ export default function TerrainViewer({ site, siteData }) {
           >
             Mesh
           </button>
+          <button
+            onClick={() => setShowColorKey(!showColorKey)}
+            style={{
+              background: showColorKey ? 'rgba(56, 189, 248, 0.2)' : 'transparent',
+              color: showColorKey ? '#38bdf8' : '#64748b',
+              border: 'none',
+              padding: '3px 6px',
+              borderRadius: '3px',
+              fontSize: '0.64rem',
+              cursor: 'pointer',
+              fontWeight: 600
+            }}
+            title="Toggle Elevation Color Legend for Students"
+          >
+            🎨 Color Key
+          </button>
         </div>
       </div>
+
+      {/* Educational Elevation Colormap Legend (Key for Students & Public) */}
+      {showColorKey && renderMode === 'elevation' && (
+        <div style={{
+          position: 'absolute',
+          top: 50,
+          right: 12,
+          background: 'rgba(6, 11, 25, 0.9)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: '6px',
+          padding: '8px 12px',
+          width: '210px',
+          fontSize: '0.66rem',
+          color: '#cbd5e1',
+          zIndex: 5,
+          pointerEvents: 'auto',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.5)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <span style={{ fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', fontSize: '0.62rem' }}>
+              What Do These Colors Mean?
+            </span>
+            <button
+              onClick={() => setShowColorKey(false)}
+              style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '10px' }}
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Color Gradient Strip */}
+          <div style={{
+            height: '8px',
+            borderRadius: '4px',
+            marginBottom: '8px',
+            background: 'linear-gradient(to right, #3b0764, #0284c7, #22c55e, #fbbf24, #ef4444, #ffffff)'
+          }} />
+
+          {/* Color Levels Explanation */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: 8, height: 8, borderRadius: '2px', background: '#ffffff', border: '1px solid #ef4444' }} />
+              <span><strong>White/Red:</strong> Peaks & Summits (Sunlit!)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: 8, height: 8, borderRadius: '2px', background: '#fbbf24' }} />
+              <span><strong>Yellow:</strong> High Ridge Crests</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: 8, height: 8, borderRadius: '2px', background: '#22c55e' }} />
+              <span><strong>Green:</strong> Slopes & Highland Plains</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: 8, height: 8, borderRadius: '2px', background: '#0284c7' }} />
+              <span><strong>Cyan:</strong> Crater Floors & Lowlands</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: 8, height: 8, borderRadius: '2px', background: '#3b0764' }} />
+              <span><strong>Purple:</strong> Deep Bowls & Cold Traps (Ice!)</span>
+            </div>
+          </div>
+          <div style={{ marginTop: '6px', fontSize: '0.58rem', color: '#64748b', fontStyle: 'italic' }}>
+            NASA LOLA Hypsometric Scale Standard
+          </div>
+        </div>
+      )}
 
       {/* Bottom HUD: Topographic Measurements */}
       {meshData && (
@@ -282,7 +398,7 @@ export default function TerrainViewer({ site, siteData }) {
           <div style={{
             display: 'flex',
             gap: '8px',
-            background: 'rgba(6, 11, 25, 0.8)',
+            background: 'rgba(6, 11, 25, 0.85)',
             backdropFilter: 'blur(8px)',
             padding: '5px 12px',
             borderRadius: '5px',
@@ -302,13 +418,14 @@ export default function TerrainViewer({ site, siteData }) {
 
           <div style={{
             fontSize: '0.62rem',
-            color: '#64748b',
-            background: 'rgba(6, 11, 25, 0.7)',
-            padding: '3px 8px',
+            color: '#cbd5e1',
+            background: 'rgba(6, 11, 25, 0.8)',
+            padding: '4px 10px',
             borderRadius: '4px',
-            fontFamily: 'monospace'
+            fontFamily: 'monospace',
+            border: '1px solid rgba(255,255,255,0.06)'
           }}>
-            🎯 Target Ellipse Center
+            Scale: <span style={{ color: '#38bdf8' }}>3.84 km</span> across (30m/px)
           </div>
         </div>
       )}
