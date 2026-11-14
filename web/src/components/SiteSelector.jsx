@@ -19,12 +19,13 @@ function CoverageBadge({ coverage }) {
   if (coverage === 'hero') {
     return (
       <span style={{
+        fontFamily: 'var(--font-mono)',
         background: 'rgba(251, 191, 36, 0.15)',
         color: '#fbbf24',
         border: '1px solid rgba(251, 191, 36, 0.3)',
         borderRadius: '4px',
-        padding: '1px 6px',
-        fontSize: '0.62rem',
+        padding: '1px 5px',
+        fontSize: '0.6rem',
         fontWeight: 700,
         letterSpacing: '0.04em'
       }}>
@@ -35,12 +36,13 @@ function CoverageBadge({ coverage }) {
   if (coverage === 'limited') {
     return (
       <span style={{
+        fontFamily: 'var(--font-mono)',
         background: 'rgba(239, 68, 68, 0.15)',
         color: '#f87171',
         border: '1px solid rgba(239, 68, 68, 0.3)',
         borderRadius: '4px',
-        padding: '1px 6px',
-        fontSize: '0.62rem',
+        padding: '1px 5px',
+        fontSize: '0.6rem',
         fontWeight: 700,
         letterSpacing: '0.04em'
       }}>
@@ -50,12 +52,13 @@ function CoverageBadge({ coverage }) {
   }
   return (
     <span style={{
+      fontFamily: 'var(--font-mono)',
       background: 'rgba(56, 189, 248, 0.12)',
       color: '#38bdf8',
       border: '1px solid rgba(56, 189, 248, 0.25)',
       borderRadius: '4px',
-      padding: '1px 6px',
-      fontSize: '0.62rem',
+      padding: '1px 5px',
+      fontSize: '0.6rem',
       fontWeight: 600,
       letterSpacing: '0.04em'
     }}>
@@ -91,11 +94,19 @@ export default function SiteSelector({ sites, selectedSite, onSelect }) {
       {/* Search Bar & Header */}
       <div style={{ padding: '12px 14px 8px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', color: '#94a3b8', textTransform: 'uppercase' }}>
+          <span style={{
+            fontFamily: 'var(--font-label)',
+            fontSize: '0.68rem',
+            fontWeight: 700,
+            letterSpacing: '0.08em',
+            color: '#94a3b8',
+            textTransform: 'uppercase'
+          }}>
             Lunar Landing Sites
           </span>
           <span style={{
-            fontSize: '0.65rem',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '0.64rem',
             background: 'rgba(56, 189, 248, 0.1)',
             color: '#38bdf8',
             padding: '1px 6px',
@@ -113,6 +124,7 @@ export default function SiteSelector({ sites, selectedSite, onSelect }) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           style={{
+            fontFamily: 'var(--font-ui)',
             width: '100%',
             background: 'rgba(15, 23, 42, 0.8)',
             border: '1px solid rgba(255,255,255,0.1)',
@@ -137,6 +149,7 @@ export default function SiteSelector({ sites, selectedSite, onSelect }) {
               key={tab.id}
               onClick={() => setFilter(tab.id)}
               style={{
+                fontFamily: 'var(--font-ui)',
                 background: filter === tab.id ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255,255,255,0.04)',
                 color: filter === tab.id ? '#38bdf8' : '#64748b',
                 border: filter === tab.id ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid transparent',
@@ -183,10 +196,17 @@ export default function SiteSelector({ sites, selectedSite, onSelect }) {
             >
               {/* Row 1: Site Title & Score Pill */}
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '6px', marginBottom: '4px' }}>
-                <div style={{ fontWeight: 600, fontSize: '0.78rem', color: isSelected ? '#38bdf8' : '#f1f5f9', lineHeight: 1.25 }}>
+                <div style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  color: isSelected ? '#38bdf8' : '#f1f5f9',
+                  lineHeight: 1.25
+                }}>
                   {site.name}
                 </div>
                 <div style={{
+                  fontFamily: 'var(--font-mono)',
                   background: score >= 85 ? 'rgba(34, 197, 94, 0.15)' : score >= 70 ? 'rgba(251, 191, 36, 0.15)' : 'rgba(239, 68, 68, 0.15)',
                   color: score >= 85 ? '#4ade80' : score >= 70 ? '#fbbf24' : '#f87171',
                   border: `1px solid ${score >= 85 ? 'rgba(34, 197, 94, 0.3)' : score >= 70 ? 'rgba(251, 191, 36, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
@@ -202,7 +222,7 @@ export default function SiteSelector({ sites, selectedSite, onSelect }) {
 
               {/* Row 2: Badges and Coordinates */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <div style={{ fontSize: '0.66rem', color: '#64748b', fontFamily: 'monospace' }}>
+                <div style={{ fontSize: '0.64rem', color: '#64748b', fontFamily: 'var(--font-mono)' }}>
                   {formatCoord(site.lat_deg, 'N', 'S')}, {formatCoord(site.lon_deg, 'E', 'W')}
                 </div>
                 <CoverageBadge coverage={site.coverage} />
@@ -212,7 +232,7 @@ export default function SiteSelector({ sites, selectedSite, onSelect }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 {/* Sun Bar */}
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.62rem', color: '#94a3b8', marginBottom: '2px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.62rem', color: '#94a3b8', marginBottom: '2px', fontFamily: 'var(--font-mono)' }}>
                     <span>☀️ Sun</span>
                     <span style={{ color: '#fbbf24', fontWeight: 600 }}>{sunPct}%</span>
                   </div>
@@ -223,7 +243,7 @@ export default function SiteSelector({ sites, selectedSite, onSelect }) {
 
                 {/* Earth Bar */}
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.62rem', color: '#94a3b8', marginBottom: '2px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.62rem', color: '#94a3b8', marginBottom: '2px', fontFamily: 'var(--font-mono)' }}>
                     <span>🌍 Earth</span>
                     <span style={{ color: '#38bdf8', fontWeight: 600 }}>{earthPct}%</span>
                   </div>
