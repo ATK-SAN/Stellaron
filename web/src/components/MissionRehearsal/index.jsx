@@ -850,7 +850,15 @@ export default function MissionRehearsal() {
       {/* ─── 3D PLAYBACK TAB ─── */}
       {tab === 'playback' && (
         <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-          <ChoreographyPlayer qualityTier={qualityTier} onQualityChange={setQualityTier} />
+          <ChoreographyPlayer
+            plan={form}
+            siteId={form.landing_site_id}
+            siteName={SITE_NAMES[form.landing_site_id]}
+            timeline={result?.baseline?.timeline}
+            surfaceMetrics={result?.baseline?.surface?.metrics}
+            qualityTier={qualityTier}
+            onQualityChange={setQualityTier}
+          />
         </div>
       )}
     </div>
