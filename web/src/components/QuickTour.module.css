@@ -1,0 +1,326 @@
+/* QuickTour.module.css — Flight-Ops Quick Controls Tour Overlay & Prompt */
+
+/* Bottom-Right First Visit Prompt Card */
+.promptCard {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 990;
+  width: 320px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-cyan-border, rgba(34, 211, 238, 0.35));
+  border-radius: var(--radius-lg, 10px);
+  padding: 16px;
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.7), 0 0 20px rgba(34, 211, 238, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: promptFadeIn 150ms ease forwards;
+  font-family: var(--font-sans, sans-serif);
+}
+
+.promptHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-cyan, #22D3EE);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.promptText {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-primary, #F9FAFB);
+  line-height: 1.45;
+}
+
+.promptActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* Tour Fullscreen Dimmed Overlay */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: auto;
+  overflow: hidden;
+  animation: fadeIn 150ms ease forwards;
+}
+
+/* Spotlight Cut-out (box-shadow creates darkened mask around transparent hole) */
+.spotlight {
+  position: absolute;
+  border-radius: 8px;
+  box-shadow: 0 0 0 9999px rgba(5, 7, 13, 0.82);
+  border: 2px solid var(--color-cyan, #22D3EE);
+  pointer-events: none;
+  transition: top 150ms ease, left 150ms ease, width 150ms ease, height 150ms ease;
+  z-index: 1001;
+}
+
+/* Floating Tour Step Card */
+.card {
+  position: absolute;
+  z-index: 1002;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  background: rgba(15, 23, 42, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-cyan-border, rgba(34, 211, 238, 0.35));
+  border-radius: var(--radius-lg, 10px);
+  padding: 16px 18px;
+  box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.8), 0 0 24px rgba(34, 211, 238, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-family: var(--font-sans, sans-serif);
+  animation: cardFadeIn 150ms ease forwards;
+}
+
+/* Card Header: Icon, Name, Step Counter */
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.titleArea {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-cyan, #22D3EE);
+}
+
+.stepIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: rgba(34, 211, 238, 0.12);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-cyan, #22D3EE);
+  flex-shrink: 0;
+}
+
+.stepName {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary, #F9FAFB);
+  letter-spacing: 0.02em;
+}
+
+.stepCounter {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary, #94A3B8);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill, 999px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Step Sentence */
+.stepSentence {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary, #CBD5E1);
+  line-height: 1.5;
+}
+
+/* Compact Sub-items List (for Viewport tabs and Rail modules) */
+.itemList {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  margin: 2px 0 4px;
+  padding: 0;
+  list-style: none;
+}
+
+.itemRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.itemName {
+  font-weight: 700;
+  color: var(--color-cyan, #22D3EE);
+  font-family: var(--font-mono, monospace);
+  flex-shrink: 0;
+}
+
+.itemDesc {
+  color: var(--text-tertiary, #94A3B8);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Final Step Hint */
+.hintText {
+  margin: 0;
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  color: var(--color-cyan, #22D3EE);
+  background: rgba(34, 211, 238, 0.08);
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(34, 211, 238, 0.2);
+}
+
+/* Card Footer: Navigation Buttons */
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.navGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Button styles aligned with design tokens */
+.btnPrimary {
+  background: var(--color-cyan, #22D3EE);
+  color: #05070D;
+  border: 1px solid var(--color-cyan, #22D3EE);
+  border-radius: var(--radius-sm, 6px);
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 120ms ease;
+  font-family: var(--font-sans, sans-serif);
+}
+
+.btnPrimary:hover {
+  opacity: 0.9;
+}
+
+.btnPrimary:focus-visible {
+  outline: 2px solid #FFF;
+  outline-offset: 2px;
+}
+
+.btnGhost {
+  background: transparent;
+  color: var(--text-secondary, #94A3B8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm, 6px);
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 120ms ease, border-color 120ms ease;
+  font-family: var(--font-sans, sans-serif);
+}
+
+.btnGhost:hover {
+  color: #FFF;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btnGhost:focus-visible {
+  outline: 2px solid var(--color-cyan, #22D3EE);
+  outline-offset: 2px;
+}
+
+.btnText {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary, #64748B);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 6px;
+  transition: color 120ms ease;
+  font-family: var(--font-sans, sans-serif);
+}
+
+.btnText:hover {
+  color: var(--text-secondary, #94A3B8);
+}
+
+/* Screen reader announcement element */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes promptFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .spotlight,
+  .card,
+  .promptCard {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Mobile responsive layout */
+@media (max-width: 768px) {
+  .card {
+    position: fixed !important;
+    bottom: 16px !important;
+    left: 16px !important;
+    right: 16px !important;
+    width: auto !important;
+    top: auto !important;
+  }
+}

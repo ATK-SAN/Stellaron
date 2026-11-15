@@ -58,7 +58,7 @@ export default function SiteSelector({ sites = [], selectedSite, onSelect }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--color-surface)', borderRight: '1px solid var(--color-border)' }}>
       {/* Top Header: Title & Count */}
-      <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div data-tour="search-filters" style={{ padding: '16px 16px 12px', borderBottom: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{
             fontSize: '11px',

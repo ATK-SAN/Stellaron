@@ -166,7 +166,9 @@ export default function ContextualSitePanel({
   }
 
   return (
-    <div style={{
+    <div
+      data-tour="right-panel"
+      style={{
       width: '340px',
       height: '100%',
       background: 'var(--color-surface)',
@@ -319,7 +321,9 @@ export default function ContextualSitePanel({
       </div>
 
       {/* ── Mission Slip / Delay Slider with Mono Value Readout ── */}
-      <div style={{
+      <div
+        data-tour="slip-slider"
+        style={{
         background: 'var(--color-panel)',
         border: '1px solid var(--color-border)',
         borderRadius: 'var(--radius-lg)',

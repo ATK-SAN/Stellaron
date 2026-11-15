@@ -10,7 +10,7 @@
  * - Lucide line icons throughout (zero emojis)
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import {
   Compass,
   Sun,
@@ -26,7 +26,10 @@ import {
   Radio,
   Clock,
   Sparkles,
+  CircleHelp,
 } from 'lucide-react'
+
+const QuickTour = lazy(() => import('./components/QuickTour'))
 import SiteSelector from './components/SiteSelector'
 import HorizonGlobe from './components/HorizonGlobe'
 import TerrainViewer from './components/TerrainViewer'
@@ -132,6 +135,7 @@ export default function App() {
   const [view3DMode, setView3DMode] = useState('split') // 'split' | 'globe' | 'terrain' | 'polar'
   const [missionSlipDays, setMissionSlipDays] = useState(0)
   const [utcTime, setUtcTime] = useState(() => new Date().toISOString().slice(0, 19).replace('T', ' ') + ' UTC')
+  const [tourOpen, setTourOpen] = useState(false)
 
   // Live Mission Control UTC Clock
   useEffect(() => {
@@ -307,13 +311,39 @@ export default function App() {
             <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--color-safe)', boxShadow: '0 0 8px var(--color-safe)' }} />
             <span>JPL DE421 SPICE · ONLINE</span>
           </div>
+
+          {/* Quick Tour button */}
+          <button
+            onClick={() => setTourOpen(true)}
+            title="Quick tour (?)"
+            aria-label="Open dashboard quick tour"
+            data-tour-trigger="true"
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(255,255,255,0.12)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '4px 8px',
+              cursor: 'pointer',
+              color: 'var(--text-secondary)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              fontSize: '11px',
+              fontFamily: 'var(--font-mono)',
+            }}
+          >
+            <CircleHelp size={13} strokeWidth={1.5} style={{ color: 'var(--color-cyan)' }} />
+            <span>?</span>
+          </button>
         </div>
       </header>
 
       {/* ── Main Workspace: Left Slim Rail + Context ── */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {/* Slim Left Icon Rail (56px Width) */}
-        <nav style={{
+        <nav
+          data-tour="rail"
+          style={{
           width: '56px',
           background: 'var(--color-surface)',
           borderRight: '1px solid var(--color-border)',
@@ -361,7 +391,7 @@ export default function App() {
           {activeWindow === 'explorer' && (
             <div style={{ display: 'flex', width: '100%', height: '100%', overflow: 'hidden' }}>
               {/* Column 1: Site Selector (280px) */}
-              <aside style={{ width: '280px', flexShrink: 0, height: '100%', overflow: 'hidden' }}>
+              <aside data-tour="site-list" style={{ width: '280px', flexShrink: 0, height: '100%', overflow: 'hidden' }}>
                 <SiteSelector
                   sites={sites}
                   selectedSite={selectedSite}
@@ -379,7 +409,7 @@ export default function App() {
                   zIndex: 15,
                   pointerEvents: 'none',
                 }}>
-                  <div className="segmented-control" style={{ pointerEvents: 'auto', background: 'var(--color-panel-glass)', backdropFilter: 'blur(8px)' }}>
+                  <div data-tour="viewport-tabs" className="segmented-control" style={{ pointerEvents: 'auto', background: 'var(--color-panel-glass)', backdropFilter: 'blur(8px)' }}>
                     <button
                       onClick={() => setView3DMode('split')}
                       className={`segmented-item ${view3DMode === 'split' ? 'active' : ''}`}
@@ -707,6 +737,15 @@ export default function App() {
           )}
         </div>
       </div>
+
+      {/* Quick Tour (lazy-loaded, zero bundle impact on first load) */}
+      <Suspense fallback={null}>
+        <QuickTour
+          isOpen={tourOpen}
+          onOpen={() => setTourOpen(true)}
+          onClose={() => setTourOpen(false)}
+        />
+      </Suspense>
     </div>
   )
 }

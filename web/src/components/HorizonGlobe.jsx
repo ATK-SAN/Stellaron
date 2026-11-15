@@ -366,6 +366,7 @@ export default function HorizonGlobe({ sites, selectedSite, onSelect }) {
         zIndex: 10,
       }}>
         <button
+          data-tour="labels-toggle"
           onClick={() => {
             setShowLabels(prev => {
               const next = !prev
