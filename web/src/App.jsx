@@ -247,8 +247,17 @@ export default function App() {
         flexShrink: 0,
         zIndex: 30,
       }}>
-        {/* Left: STELLARON Wordmark + Context */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Left: STELLARON Wordmark + Context (Clickable link back to Intro page) */}
+        <a
+          href="/"
+          onClick={(e) => {
+            e.preventDefault()
+            window.history.pushState({}, '', '/')
+            window.dispatchEvent(new PopStateEvent('popstate'))
+          }}
+          style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none', cursor: 'pointer' }}
+          title="Return to STELLARON Mission Briefing (Intro Page)"
+        >
           <div style={{
             width: '28px',
             height: '28px',
@@ -280,7 +289,7 @@ export default function App() {
               Lunar Landing Site Navigator · NASA Space Apps 2026
             </span>
           </div>
-        </div>
+        </a>
 
         {/* Right: Live UTC Clock + Data Status Indicator */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
