@@ -9,7 +9,7 @@
  * - Complete limits & caveat disclosures
  */
 
-import { useState, useEffect, Suspense, lazy } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Compass,
   Mountain,
@@ -24,9 +24,6 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 import styles from './IntroPage.module.css'
-
-// Lazy load the 3D globe hero so initial bundle stays lightweight
-const IntroGlobeHero = lazy(() => import('../components/IntroGlobeHero'))
 
 export default function IntroPage({ navigate }) {
   const [siteCount, setSiteCount] = useState(14)
@@ -159,19 +156,16 @@ export default function IntroPage({ navigate }) {
 
           <div className={styles.heroGlobeWrapper}>
             <div className={styles.heroGlobeGlow} aria-hidden="true" />
-            <Suspense
-              fallback={
-                <img
-                  src="/intro/hero-globe-fallback.webp"
-                  alt="Moon Globe"
-                  width="440"
-                  height="440"
-                  className={styles.heroGlobeImg}
-                />
-              }
-            >
-              <IntroGlobeHero />
-            </Suspense>
+            <picture>
+              <source srcSet="/intro/hero-emblem.webp" type="image/webp" />
+              <img
+                src="/intro/hero-emblem.jpg"
+                alt="STELLARON Lunar Landing Site Navigator emblem"
+                width="440"
+                height="440"
+                className={styles.heroGlobeImg}
+              />
+            </picture>
           </div>
         </section>
 

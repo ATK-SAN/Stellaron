@@ -38,7 +38,7 @@ def test_navbar_and_footer_have_no_launch_button():
 
 
 def test_step_images_exist_as_webp_and_jpg():
-    steps = ["step-1-explorer", "step-2-rehearsal", "step-3-crosscheck"]
+    steps = ["step-1-explorer", "step-2-rehearsal", "step-3-crosscheck", "hero-emblem"]
     for step in steps:
         webp_path = INTRO_PUBLIC / f"{step}.webp"
         jpg_path = INTRO_PUBLIC / f"{step}.jpg"
