@@ -329,12 +329,13 @@ function CameraRig({ cameraMode, sitePosVec, sunAz, sunEl, earthAz, earthEl, onT
   const controlsRef = useRef()
   const transRef = useRef({ active: false, t0: 0, dur: 1.2 })
   const targetRef = useRef({ camPos: new THREE.Vector3(0, 3.2, 5.8), lookAt: new THREE.Vector3(0, 0, 0) })
-  const lastTriggeredMode = useRef(null)
+  const lastTriggeredKey = useRef(null)
 
-  // Trigger smooth glide ONLY when cameraMode explicitly changes!
+  // Trigger smooth glide when cameraMode OR target site explicitly changes
   useEffect(() => {
-    if (cameraMode === lastTriggeredMode.current) return
-    lastTriggeredMode.current = cameraMode
+    const triggerKey = `${cameraMode}_${sitePosVec.join('_')}`
+    if (triggerKey === lastTriggeredKey.current) return
+    lastTriggeredKey.current = triggerKey
 
     const sp = new THREE.Vector3(...sitePosVec)
     const spNorm = sp.clone().normalize()
@@ -345,17 +346,17 @@ function CameraRig({ cameraMode, sitePosVec, sunAz, sunEl, earthAz, earthEl, onT
       camPos = new THREE.Vector3(0, 3.2, 5.8)
       lookAt = new THREE.Vector3(0, 0, 0)
     } else if (cameraMode === 'site_zoom') {
-      // Zoom close to site with an elevation angle
-      camPos = spNorm.clone().multiplyScalar(1.5).add(new THREE.Vector3(0, 0.25, 0.15))
+      // Zoom close to site along surface normal (0 deg angle error, centered on site)
+      camPos = spNorm.clone().multiplyScalar(1.48)
       lookAt = sp.clone()
     } else if (cameraMode === 'surface_vantage') {
       // Observer positioned on surface looking toward horizon
-      camPos = spNorm.clone().multiplyScalar(1.03)
+      camPos = spNorm.clone().multiplyScalar(1.025)
       const [sx, sy, sz] = azElToCartesian(sunAz, Math.max(sunEl, 0.5), 3.5)
       lookAt = new THREE.Vector3(sx, sy, sz)
     } else if (cameraMode === 'track_earth') {
       // Look toward Earth from above the site
-      camPos = spNorm.clone().multiplyScalar(1.4)
+      camPos = spNorm.clone().multiplyScalar(1.25)
       const [ex, ey, ez] = azElToCartesian(earthAz, Math.max(earthEl, 0.5), 4.2)
       lookAt = new THREE.Vector3(ex, ey, ez)
     } else {
@@ -364,7 +365,7 @@ function CameraRig({ cameraMode, sitePosVec, sunAz, sunEl, earthAz, earthEl, onT
 
     targetRef.current = { camPos, lookAt }
     transRef.current = { active: true, t0: performance.now() / 1000, dur: 1.2 }
-  }, [cameraMode, sitePosVec])
+  }, [cameraMode, sitePosVec, sunAz, sunEl, earthAz, earthEl])
 
   useFrame(({ camera }) => {
     if (!transRef.current.active || !controlsRef.current) {
