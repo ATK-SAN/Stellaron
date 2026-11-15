@@ -81,7 +81,7 @@ export default function ContextualSitePanel({
   // Executive briefing copy
   const briefingText = useMemo(() => {
     if (!site) return ''
-    return `${site?.name}: Modelled sunlight coverage is ${sunPct}% and Earth visibility is ${earthPct}%. Terrain elevation is ${elevationM} meters with an average slope of ${slopeDeg} degrees. Safety evaluation score is ${score} of 100.`
+    return `${site?.name}: Modelled sunlight coverage is ${sunPct}% and Earth visibility is ${earthPct}%. Terrain elevation is ${elevationM} meters with an average slope of ${slopeDeg} degrees. Modelled feasibility index is ${score} of 100.`
   }, [site, sunPct, earthPct, elevationM, slopeDeg, score])
 
   const handleSpeak = useCallback(() => {
@@ -269,7 +269,7 @@ export default function ContextualSitePanel({
 
         <div style={{ background: 'var(--color-panel)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '10px 12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--text-tertiary)', marginBottom: '4px' }}>
-            <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>Earth DTE</span>
+            <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>Earth link (DTE)</span>
             <Radio size={13} strokeWidth={1.5} style={{ color: 'var(--color-cyan)' }} />
           </div>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>

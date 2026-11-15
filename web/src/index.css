@@ -468,6 +468,66 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .metric-value.bad, .metric-value.soc-bad   { color: var(--color-hazard); }
 .metric-value.neutral                     { color: var(--color-cyan); }
 
+.metric-meaning {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--text-tertiary);
+  line-height: 1.35;
+  margin-top: 3px;
+}
+
+/* ── Result Headline & Disclosure ── */
+.headline-box {
+  background: rgba(34, 211, 238, 0.05);
+  border-left: 3px solid var(--color-cyan);
+  padding: 10px 14px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  margin-bottom: var(--space-4);
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  font-family: var(--font-sans);
+}
+
+.details-disclosure {
+  margin-top: var(--space-3);
+  margin-bottom: var(--space-4);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.details-summary {
+  cursor: pointer;
+  color: var(--color-cyan);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+  font-family: var(--font-sans);
+}
+
+.details-list {
+  margin: 8px 0 2px 18px;
+  padding: 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  font-family: var(--font-sans);
+}
+
+.details-list li {
+  margin-bottom: 4px;
+}
+
+.glossary-term {
+  cursor: help;
+  border-bottom: 1px dotted var(--text-tertiary);
+  text-decoration: none;
+}
+
 /* ── Legends & Chips ── */
 .legend-row {
   display: flex;
