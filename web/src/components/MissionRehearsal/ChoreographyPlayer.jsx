@@ -896,23 +896,36 @@ function generateAdaptedFrames(site, plan, delaySlipDays) {
 }
 
 // ─── Flight Camera Controller with Pose Reset ─────────────────────────────────
-function FlightCameraController({ resetKey, initialPos = [3.2, 3.8, 4.5], initialTarget = [0, 0, 0] }) {
+const FLIGHT_CAMERA_INITIAL_POS = [3.2, 3.8, 4.5]
+const FLIGHT_CAMERA_INITIAL_TARGET = [0, 0, 0]
+
+function FlightCameraController({ resetKey }) {
   const { camera } = useThree()
   const controlsRef = useRef()
 
   useEffect(() => {
-    if (camera) {
-      camera.position.set(...initialPos)
+    if (camera && controlsRef.current) {
+      camera.position.set(...FLIGHT_CAMERA_INITIAL_POS)
       camera.fov = 46
       camera.updateProjectionMatrix()
+      controlsRef.current.target.set(...FLIGHT_CAMERA_INITIAL_TARGET)
+      controlsRef.current.update()
+      if (controlsRef.current.saveState) {
+        controlsRef.current.saveState()
+      }
     }
-    if (controlsRef.current) {
-      controlsRef.current.target.set(...initialTarget)
-      controlsRef.current.reset()
-    }
-  }, [resetKey, camera, initialPos, initialTarget])
+  }, [resetKey, camera])
 
-  return <OrbitControls ref={controlsRef} makeDefault enableDamping dampingFactor={0.06} />
+  return (
+    <OrbitControls
+      ref={controlsRef}
+      makeDefault
+      enableDamping
+      dampingFactor={0.06}
+      minDistance={1.0}
+      maxDistance={60}
+    />
+  )
 }
 
 // ─── Main ChoreographyPlayer Component ─────────────────────────────────────────
@@ -936,39 +949,21 @@ export default function ChoreographyPlayer({
   const [showLabels, setShowLabels] = useState(true)
   const [isSiteCardExpanded, setIsSiteCardExpanded] = useState(false)
 
-  // Explicit Playback Reset State Transition (Section 6b.B)
+  // Explicit Playback Reset State Transition
   const [cameraResetKey, setCameraResetKey] = useState(0)
-  const hasSwitchedToRidgeRef = useRef(false)
-
-  const resetPlaybackView = () => {
-    setViewMode('flight')
-    hasSwitchedToRidgeRef.current = false
-    setCameraResetKey(k => k + 1)
-  }
 
   // Playback Animation State
   const [currentStep, setCurrentStep] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [playSpeed, setPlaySpeed] = useState(1)
 
-  // Restart Triggers per 6b.B: site change, slip change, plan change
+  // When site changes: pause playback and rewind if in flight mode
   useEffect(() => {
-    setCurrentStep(0)
     setIsPlaying(false)
-    resetPlaybackView()
+    if (viewMode === 'flight') {
+      setCurrentStep(0)
+    }
   }, [site.id])
-
-  useEffect(() => {
-    setCurrentStep(0)
-    setIsPlaying(false)
-    resetPlaybackView()
-  }, [delaySlipDays])
-
-  useEffect(() => {
-    setCurrentStep(0)
-    setIsPlaying(false)
-    resetPlaybackView()
-  }, [plan])
 
   // Topographic & Ephemeris Data State
   const [meshData, setMeshData] = useState(null)
@@ -1009,25 +1004,28 @@ export default function ChoreographyPlayer({
 
   const curFrame = frames[currentStep] || frames[0]
 
-  // Playback Timer with automatic transition to ridge at descent (Section 6b.B)
+  // Playback Timer
   useEffect(() => {
     if (!isPlaying) return
     const interval = setInterval(() => {
       setCurrentStep(prev => {
-        if (prev >= frames.length - 1) {
-          setIsPlaying(false)
-          return prev
-        }
-        const next = prev + 1
-        if (!hasSwitchedToRidgeRef.current && next >= 92) {
-          hasSwitchedToRidgeRef.current = true
-          setViewMode('ridge')
-        }
-        return next
+        if (prev >= frames.length - 1) return prev
+        return prev + 1
       })
     }, 120 / playSpeed)
     return () => clearInterval(interval)
   }, [isPlaying, playSpeed, frames.length])
+
+  // React to playback progress milestones (auto-transition to ridge at descent, stop at touchdown)
+  useEffect(() => {
+    if (!isPlaying) return
+    if (currentStep >= frames.length - 1) {
+      setIsPlaying(false)
+      setViewMode('ridge')
+    } else if (currentStep >= 92 && viewMode === 'flight') {
+      setViewMode('ridge')
+    }
+  }, [currentStep, isPlaying, frames.length, viewMode])
 
   const isAtEnd = currentStep >= frames.length - 1
 
@@ -1037,7 +1035,7 @@ export default function ChoreographyPlayer({
     } else {
       if (isAtEnd) {
         setCurrentStep(0)
-        resetPlaybackView()
+        setViewMode('flight')
       }
       setIsPlaying(true)
     }
@@ -1045,8 +1043,10 @@ export default function ChoreographyPlayer({
 
   const handleScrubberChange = (val) => {
     setCurrentStep(val)
-    if (val < 92 && hasSwitchedToRidgeRef.current) {
-      resetPlaybackView()
+    if (val >= 92 && viewMode === 'flight') {
+      setViewMode('ridge')
+    } else if (val < 92 && viewMode === 'ridge') {
+      setViewMode('flight')
     }
   }
 
@@ -1134,6 +1134,9 @@ export default function ChoreographyPlayer({
                 onClick={() => {
                   if (onSelectDemo) onSelectDemo(d.id)
                   setDelaySlipDays(d.defaultSlip)
+                  setCurrentStep(0)
+                  setViewMode('flight')
+                  setIsPlaying(false)
                 }}
                 className={`segmented-item ${isMatch ? 'active' : ''}`}
                 title="Illustrative model demo scenario"
@@ -1154,6 +1157,18 @@ export default function ChoreographyPlayer({
             {showLabels ? <Eye size={13} strokeWidth={1.5} /> : <EyeOff size={13} strokeWidth={1.5} />}
             <span>{showLabels ? 'Labels' : 'No Labels'}</span>
           </button>
+
+          {viewMode === 'flight' && (
+            <button
+              onClick={() => setCameraResetKey(k => k + 1)}
+              className="btn btn-secondary"
+              style={{ padding: '5px 10px', fontSize: '12px' }}
+              title="Reset camera view to default orientation"
+            >
+              <RotateCcw size={13} strokeWidth={1.5} />
+              <span>Reset View</span>
+            </button>
+          )}
 
           {viewMode === 'ridge' && (
             <button
