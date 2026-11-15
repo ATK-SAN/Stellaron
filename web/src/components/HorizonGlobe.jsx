@@ -8,11 +8,11 @@
  * - Lucide line icons (zero emojis)
  */
 
-import { useRef, useMemo, useState } from 'react'
+import { useRef, useMemo, useState, useEffect } from 'react'
 import { Canvas, useFrame, useLoader } from '@react-three/fiber'
 import { OrbitControls, Stars, Html } from '@react-three/drei'
 import * as THREE from 'three'
-import { Globe, Layers, Check } from 'lucide-react'
+import { Globe, Layers, Check, Tag } from 'lucide-react'
 
 // Convert lat/lon degrees to 3D Cartesian coordinates on sphere of radius r
 function latLonToVec3(lat, lon, r = 1.0) {
@@ -132,8 +132,8 @@ function TexturedMoon({ selectedSite, showGrid, showPoles }) {
             <ringGeometry args={[1.004, 1.008, 64]} />
             <meshBasicMaterial color="#10B981" transparent opacity={0.4} side={THREE.DoubleSide} />
           </mesh>
-          {/* Equator Label */}
-          <Html distanceFactor={5} position={[1.05, 0, 0]} center>
+          {/* Equator Label (fixed screen size) */}
+          <Html position={[1.05, 0, 0]} center occlude style={{ pointerEvents: 'none' }}>
             <div style={{
               background: 'rgba(17, 24, 39, 0.85)',
               border: '1px solid var(--color-safe-border)',
@@ -159,9 +159,10 @@ function TexturedMoon({ selectedSite, showGrid, showPoles }) {
   )
 }
 
-function SiteMarker({ site, isSelected, onClick }) {
+function SiteMarker({ site, isSelected, onClick, showLabels }) {
   const markerRef = useRef()
   const ringRef = useRef()
+  const [hovered, setHovered] = useState(false)
   const pos = useMemo(() => latLonToVec3(site.lat_deg, site.lon_deg, 1.015), [site.lat_deg, site.lon_deg])
 
   useFrame((state) => {
@@ -183,6 +184,9 @@ function SiteMarker({ site, isSelected, onClick }) {
   const isLimited = site.coverage === 'limited'
   const baseColor = isSelected ? '#22D3EE' : isHero ? '#F59E0B' : isLimited ? '#EF4444' : '#9CA3AF'
 
+  // Label display: selected always visible; hero sites visible when showLabels on; hovered visible
+  const shouldShowLabel = isSelected || (showLabels && isHero) || hovered
+
   return (
     <group position={pos}>
       {/* Beacon sphere */}
@@ -192,12 +196,20 @@ function SiteMarker({ site, isSelected, onClick }) {
           e.stopPropagation()
           onClick(site)
         }}
+        onPointerOver={(e) => {
+          e.stopPropagation()
+          setHovered(true)
+        }}
+        onPointerOut={(e) => {
+          e.stopPropagation()
+          setHovered(false)
+        }}
       >
         <sphereGeometry args={[isSelected ? 0.024 : 0.016, 16, 16]} />
         <meshStandardMaterial
           color={baseColor}
           emissive={baseColor}
-          emissiveIntensity={isSelected ? 3.0 : 1.2}
+          emissiveIntensity={isSelected ? 3.0 : hovered ? 2.2 : 1.2}
         />
       </mesh>
 
@@ -209,26 +221,25 @@ function SiteMarker({ site, isSelected, onClick }) {
         </mesh>
       )}
 
-      {/* Site Name Label */}
-      {isSelected && (
-        <Html distanceFactor={4} position={[0, 0.06, 0]} center>
+      {/* Site Name Label (constant 11px screen size, occluded on backface) */}
+      {shouldShowLabel && (
+        <Html position={[0, 0.045, 0]} center occlude style={{ pointerEvents: 'none' }}>
           <div style={{
             background: 'rgba(17, 24, 39, 0.95)',
             border: `1px solid ${baseColor}`,
-            boxShadow: `0 0 14px ${baseColor}40`,
+            boxShadow: `0 0 10px ${baseColor}40`,
             borderRadius: 'var(--radius-sm)',
-            padding: '2px 8px',
+            padding: '2px 7px',
             color: '#fff',
             fontSize: '11px',
             fontFamily: 'var(--font-mono)',
             whiteSpace: 'nowrap',
-            pointerEvents: 'none',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '5px',
           }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: baseColor }} />
-            <strong>{site.name}</strong>
+            <div style={{ width: 5, height: 5, borderRadius: '50%', background: baseColor }} />
+            <strong style={{ fontWeight: isSelected ? 700 : 500 }}>{site.name}</strong>
           </div>
         </Html>
       )}
@@ -236,7 +247,7 @@ function SiteMarker({ site, isSelected, onClick }) {
   )
 }
 
-function Scene({ sites, selectedSite, onSelect, showGrid, showPoles }) {
+function Scene({ sites, selectedSite, onSelect, showGrid, showPoles, showLabels }) {
   return (
     <>
       <ambientLight intensity={0.5} />
@@ -258,6 +269,7 @@ function Scene({ sites, selectedSite, onSelect, showGrid, showPoles }) {
           site={site}
           isSelected={selectedSite?.id === site.id}
           onClick={onSelect}
+          showLabels={showLabels}
         />
       ))}
 
@@ -276,6 +288,30 @@ function Scene({ sites, selectedSite, onSelect, showGrid, showPoles }) {
 export default function HorizonGlobe({ sites, selectedSite, onSelect }) {
   const [showPoles, setShowPoles] = useState(true)
   const [showGrid, setShowGrid] = useState(true)
+  const [showLabels, setShowLabels] = useState(() => {
+    try {
+      const saved = localStorage.getItem('stellaron_globe_labels')
+      return saved !== null ? JSON.parse(saved) : true
+    } catch {
+      return true
+    }
+  })
+
+  // Keyboard shortcut: L toggles site labels
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+      if (e.key === 'l' || e.key === 'L') {
+        setShowLabels(prev => {
+          const next = !prev
+          try { localStorage.setItem('stellaron_globe_labels', JSON.stringify(next)) } catch {}
+          return next
+        })
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative', background: '#05070D' }}>
@@ -289,6 +325,7 @@ export default function HorizonGlobe({ sites, selectedSite, onSelect }) {
           onSelect={onSelect}
           showGrid={showGrid}
           showPoles={showPoles}
+          showLabels={showLabels}
         />
       </Canvas>
 
@@ -328,6 +365,22 @@ export default function HorizonGlobe({ sites, selectedSite, onSelect }) {
         border: '1px solid var(--color-border)',
         zIndex: 10,
       }}>
+        <button
+          onClick={() => {
+            setShowLabels(prev => {
+              const next = !prev
+              try { localStorage.setItem('stellaron_globe_labels', JSON.stringify(next)) } catch {}
+              return next
+            })
+          }}
+          className={`btn ${showLabels ? 'btn-primary' : 'btn-ghost'}`}
+          style={{ padding: '3px 8px', fontSize: '11px' }}
+          aria-pressed={showLabels}
+          title="Toggle Site Labels (Keyboard shortcut: L)"
+        >
+          <Tag size={12} strokeWidth={1.5} />
+          <span>Labels</span>
+        </button>
         <button
           onClick={() => setShowPoles(!showPoles)}
           className={`btn ${showPoles ? 'btn-primary' : 'btn-ghost'}`}

@@ -121,7 +121,7 @@ function TopographicTerrainMesh({ meshData, renderMode }) {
           <circleGeometry args={[0.04, 16]} />
           <meshBasicMaterial color="#F59E0B" />
         </mesh>
-        <Html distanceFactor={6} position={[0, 0.15, 0]} center>
+        <Html position={[0, 0.15, 0]} center style={{ pointerEvents: 'none' }}>
           <div style={{
             background: 'rgba(17, 24, 39, 0.92)',
             border: '1px solid var(--color-cyan-border)',
@@ -142,9 +142,9 @@ function TopographicTerrainMesh({ meshData, renderMode }) {
         </Html>
       </group>
 
-      {/* 3D Direction Markers on Terrain Edge */}
+      {/* 3D Direction Markers on Terrain Edge (Fixed screen-size labels) */}
       <group position={[0, 0.05, 0]}>
-        <Html distanceFactor={7} position={[0, 0, -2.7]} center>
+        <Html position={[0, 0, -2.7]} center style={{ pointerEvents: 'none' }}>
           <div style={{
             color: 'var(--color-cyan)',
             fontSize: '10px',
@@ -158,7 +158,7 @@ function TopographicTerrainMesh({ meshData, renderMode }) {
             NORTH (0°)
           </div>
         </Html>
-        <Html distanceFactor={7} position={[0, 0, 2.7]} center>
+        <Html position={[0, 0, 2.7]} center style={{ pointerEvents: 'none' }}>
           <div style={{
             color: 'var(--color-caution)',
             fontSize: '10px',
@@ -172,7 +172,7 @@ function TopographicTerrainMesh({ meshData, renderMode }) {
             SOUTH (POLE)
           </div>
         </Html>
-        <Html distanceFactor={7} position={[2.7, 0, 0]} center>
+        <Html position={[2.7, 0, 0]} center style={{ pointerEvents: 'none' }}>
           <div style={{
             color: 'var(--text-tertiary)',
             fontSize: '10px',
@@ -186,7 +186,7 @@ function TopographicTerrainMesh({ meshData, renderMode }) {
             EAST (90°)
           </div>
         </Html>
-        <Html distanceFactor={7} position={[-2.7, 0, 0]} center>
+        <Html position={[-2.7, 0, 0]} center style={{ pointerEvents: 'none' }}>
           <div style={{
             color: 'var(--text-tertiary)',
             fontSize: '10px',
