@@ -57,7 +57,7 @@ export default function ContextualSitePanel({
   // Detect realistic hazard flags from site parameters
   const hazards = useMemo(() => {
     const list = []
-    if (slopeDeg > 15) list.push({ label: 'Steep Slope (>15°)', severity: 'hazard' })
+    if (slopeDeg > 15) list.push({ label: 'Slope >15° (Default limit, adjustable)', severity: 'hazard' })
     else if (slopeDeg > 8) list.push({ label: 'Moderate Incline', severity: 'caution' })
 
     if (site?.sunlight_fraction < 0.6) list.push({ label: 'Crater Shadow Risk', severity: 'hazard' })
@@ -70,6 +70,8 @@ export default function ContextualSitePanel({
 
     if (site?.id?.includes('ridge')) list.push({ label: 'Ridge Crest Geometry', severity: 'safe' })
     if (site?.id?.includes('peak')) list.push({ label: 'Narrow Touchdown Zone', severity: 'caution' })
+
+    list.push({ label: 'Horizon Limited to ~1.9 km', severity: 'caution' })
 
     return list
   }, [site, slopeDeg])
@@ -146,11 +148,19 @@ export default function ContextualSitePanel({
         gap: '14px',
       }}>
         <div>
-          <div style={{ fontSize: '11px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
-            Feasibility Score
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>
+              Modelled Feasibility Index
+            </span>
+            <span style={{ fontSize: '9px', color: 'var(--color-cyan)', background: 'var(--color-cyan-subtle)', border: '1px solid var(--color-cyan-border)', padding: '1px 4px', borderRadius: '3px' }}>
+              Modelled Constraint Check
+            </span>
           </div>
-          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.4 }}>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '3px', lineHeight: 1.4 }}>
             {score >= 85 ? 'High sunlight & comms' : score >= 70 ? 'Marginal power buffer' : 'High shadow / hazard risk'}
+          </div>
+          <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', marginTop: '4px' }}>
+            Weights: 45% Sun · 35% DTE · 20% Slope
           </div>
         </div>
 
@@ -247,6 +257,9 @@ export default function ContextualSitePanel({
               </span>
             )
           })}
+        </div>
+        <div style={{ fontSize: '10px', color: 'var(--text-tertiary)', marginTop: '6px', lineHeight: 1.35 }}>
+          Note: 30m LOLA DTM cannot resolve rocks or meter-scale craters; slope reflects regional terrain gradient, not an engineering landing-hazard certification.
         </div>
       </div>
 

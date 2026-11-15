@@ -203,6 +203,25 @@ export default function SiteSelector({ sites = [], selectedSite, onSelect }) {
             No landing sites match search criteria
           </div>
         )}
+
+        {/* Roadmap: Custom Coordinates & High-Res DTM Ingestion */}
+        <div style={{
+          margin: '12px 12px 16px 12px',
+          padding: '10px 12px',
+          background: 'rgba(15, 23, 42, 0.6)',
+          border: '1px solid rgba(255, 255, 255, 0.06)',
+          borderRadius: 'var(--radius-sm)',
+          fontSize: '11px',
+          color: 'var(--text-tertiary)',
+          lineHeight: 1.45,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', color: 'var(--color-cyan)', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', fontSize: '10px' }}>
+            <span>Roadmap Item</span>
+          </div>
+          <div>
+            Arbitrary custom coordinate input and high-resolution LOLA DTM ingestion are scheduled for upcoming release. Current engine indexes 14 verified polar and science sites.
+          </div>
+        </div>
       </div>
     </div>
   )

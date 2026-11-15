@@ -665,6 +665,36 @@ export default function CelestialSimulator({ site, siteData, onBack }) {
   const mSun = siteData?.metrics?.sunlight || {}
   const mEarth = siteData?.metrics?.geometric_earth_visibility || {}
 
+  // Solar transition countdown (sunset / sunrise)
+  const solarCountdown = useMemo(() => {
+    if (!timeSeries.sun_visible) return null
+    const sv = timeSeries.sun_visible
+    const stepS = siteData?.interval?.step_s || 600
+    const current = sv[stepIndex]
+    for (let i = stepIndex + 1; i < sv.length; i++) {
+      if (sv[i] !== current) {
+        const hrs = ((i - stepIndex) * stepS / 3600).toFixed(1)
+        return current ? `Sunset in ${hrs}h` : `Sunrise in ${hrs}h`
+      }
+    }
+    return current ? 'Continuous Sun' : 'Continuous Shadow'
+  }, [timeSeries.sun_visible, stepIndex, siteData])
+
+  // Earth transition countdown (earthset / next comms acquisition)
+  const earthCountdown = useMemo(() => {
+    if (!timeSeries.earth_visible) return null
+    const ev = timeSeries.earth_visible
+    const stepS = siteData?.interval?.step_s || 600
+    const current = ev[stepIndex]
+    for (let i = stepIndex + 1; i < ev.length; i++) {
+      if (ev[i] !== current) {
+        const hrs = ((i - stepIndex) * stepS / 3600).toFixed(1)
+        return current ? `Earthset in ${hrs}h` : `Contact in ${hrs}h`
+      }
+    }
+    return current ? 'Continuous DTE' : 'Permanent Occultation'
+  }, [timeSeries.earth_visible, stepIndex, siteData])
+
   // Next Contact countdown (hours until next acquisition of signal)
   const nextContactHours = useMemo(() => {
     if (!timeSeries.earth_visible) return null
@@ -784,8 +814,22 @@ export default function CelestialSimulator({ site, siteData, onBack }) {
             fontSize: '0.68rem',
             color: '#cbd5e1'
           }}>
-            SUN: <strong style={{ color: '#fbbf24' }}>{currentSunAz.toFixed(1)}�</strong> Az | <strong style={{ color: currentSunEl >= 0 ? '#34d399' : '#f87171' }}>{currentSunEl.toFixed(2)}�</strong> El
+            SUN: <strong style={{ color: '#fbbf24' }}>{currentSunAz.toFixed(1)}\u00b0</strong> Az | <strong style={{ color: currentSunEl >= 0 ? '#34d399' : '#f87171' }}>{currentSunEl.toFixed(2)}\u00b0</strong> El
           </div>
+
+          {solarCountdown && (
+            <div style={{
+              fontFamily: 'var(--font-mono)',
+              background: 'rgba(251,191,36,0.12)',
+              border: '1px solid rgba(251,191,36,0.3)',
+              borderRadius: '5px',
+              padding: '3px 8px',
+              fontSize: '0.64rem',
+              color: '#fbbf24'
+            }}>
+              {solarCountdown}
+            </div>
+          )}
 
           <div style={{
             fontFamily: 'var(--font-mono)',
@@ -796,13 +840,13 @@ export default function CelestialSimulator({ site, siteData, onBack }) {
             fontSize: '0.68rem',
             color: '#cbd5e1'
           }}>
-            EARTH: <strong style={{ color: '#38bdf8' }}>{currentEarthAz.toFixed(1)}�</strong> Az | <strong style={{ color: currentEarthEl >= 0 ? '#38bdf8' : '#f87171' }}>{currentEarthEl.toFixed(2)}�</strong> El
+            EARTH: <strong style={{ color: '#38bdf8' }}>{currentEarthAz.toFixed(1)}\u00b0</strong> Az | <strong style={{ color: currentEarthEl >= 0 ? '#38bdf8' : '#f87171' }}>{currentEarthEl.toFixed(2)}\u00b0</strong> El
           </div>
 
           <div style={{
             fontFamily: 'var(--font-mono)',
             background: currentEarthVis ? 'rgba(56,189,248,0.18)' : 'rgba(239,68,68,0.18)',
-            border: `1px solid ${currentEarthVis ? 'rgba(56,189,248,0.5)' : 'rgba(239,68,68,0.5)'}`,
+            border: currentEarthVis ? '1px solid rgba(56,189,248,0.5)' : '1px solid rgba(239,68,68,0.5)',
             borderRadius: '5px',
             padding: '3px 9px',
             fontSize: '0.68rem',
@@ -812,17 +856,17 @@ export default function CelestialSimulator({ site, siteData, onBack }) {
             {currentEarthVis ? 'DTE ACTIVE' : 'BLACKOUT'}
           </div>
 
-          {!currentEarthVis && nextContactHours !== null && (
+          {earthCountdown && (
             <div style={{
               fontFamily: 'var(--font-mono)',
-              background: 'rgba(251,191,36,0.12)',
-              border: '1px solid rgba(251,191,36,0.3)',
+              background: currentEarthVis ? 'rgba(56,189,248,0.12)' : 'rgba(239,68,68,0.12)',
+              border: currentEarthVis ? '1px solid rgba(56,189,248,0.3)' : '1px solid rgba(239,68,68,0.3)',
               borderRadius: '5px',
               padding: '3px 8px',
               fontSize: '0.64rem',
-              color: '#fbbf24'
+              color: currentEarthVis ? '#38bdf8' : '#f87171'
             }}>
-              Contact in {nextContactHours}h
+              {earthCountdown}
             </div>
           )}
         </div>

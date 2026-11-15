@@ -85,8 +85,8 @@ const DEFAULT_FORM = {
 // ─── Demo presets ──────────────────────────────────────────────────────────────
 const DEMO_PRESETS = {
   A: {
-    label: 'Demo A',
-    desc: 'Shackleton Ridge · 14-day surface · nominal profile',
+    label: 'Demo A (Demo Scenario)',
+    desc: 'Shackleton Ridge · 14-day surface · nominal demo scenario',
     form: {
       centre: 'Demo Agency Alpha',
       mission: 'DEMO-LUNAR-A',
@@ -101,8 +101,8 @@ const DEMO_PRESETS = {
     },
   },
   B: {
-    label: 'Demo B',
-    desc: 'Malapert Mountain · reduced hardware power scenario',
+    label: 'Demo B (Demo Scenario)',
+    desc: 'Malapert Mountain · reduced hardware power demo scenario',
     form: {
       centre: 'Demo Agency Beta',
       mission: 'DEMO-LUNAR-B',
@@ -117,8 +117,8 @@ const DEMO_PRESETS = {
     },
   },
   C: {
-    label: 'Demo C',
-    desc: 'Nobile Rim 1 · launch slip scenario',
+    label: 'Demo C (Demo Scenario)',
+    desc: 'Nobile Rim 1 · launch slip demo scenario',
     form: {
       centre: 'Demo Agency Gamma',
       mission: 'DEMO-LUNAR-C',
@@ -527,14 +527,16 @@ export default function MissionRehearsal() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Server size={14} strokeWidth={1.5} style={{ color: 'var(--color-cyan)' }} />
-          <span>Live simulation requires the backend calculation engine.</span>
+          <span>
+            SPICE Engine supports arbitrary dates through 2050 (&lt;1.0s run time). Web client replays pre-computed April 2026 baseline.
+          </span>
         </div>
         <button
           onClick={() => handleRunDemo('A')}
           className="btn btn-secondary"
           style={{ padding: '3px 10px', fontSize: '11px' }}
         >
-          Use Demo Data (Demo A)
+          Load Demo Scenario (Demo A)
         </button>
       </div>
 

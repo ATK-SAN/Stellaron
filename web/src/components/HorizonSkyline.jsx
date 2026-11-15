@@ -23,6 +23,8 @@ export default function HorizonSkyline({ siteData, site, currentStep }) {
   const timeSeries = siteData?.time_series || {}
   const azs = horizon.az_deg || []
   const els = horizon.elevation_deg || []
+  const limitedFlags = horizon.limited_flags || []
+  const numLimited = limitedFlags.filter(Boolean).length
   const sunAzs = timeSeries.sun_az_deg || []
   const sunEls = timeSeries.sun_el_deg || []
   const earthAzs = timeSeries.earth_az_deg || []
@@ -282,6 +284,17 @@ export default function HorizonSkyline({ siteData, site, currentStep }) {
       ctx.setLineDash([])
     }
 
+    // ── Flag azimuths where ray reached DEM tile boundary (~1.9 km) ──
+    if (limitedFlags.length) {
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.55)'
+      for (let i = 0; i < azs.length; i++) {
+        if (limitedFlags[i]) {
+          const x = azToX(azs[i], W)
+          ctx.fillRect(x - 0.5, H - 36, 1.5, 4)
+        }
+      }
+    }
+
     // ── Y-axis elevation labels ──
     ctx.font = '9px monospace'
     ctx.textAlign = 'left'
@@ -291,7 +304,7 @@ export default function HorizonSkyline({ siteData, site, currentStep }) {
       const y = elToY(el, H)
       ctx.fillText(el + '°', 3, y + 3)
     }
-  }, [terrainProfile, sunPathPoints, earthPathPoints, liveSunAz, liveSunEl, liveEarthAz, liveEarthEl, hoveredAz, elMin, elMax, liveEarthVis, liveSunVis])
+  }, [terrainProfile, sunPathPoints, earthPathPoints, liveSunAz, liveSunEl, liveEarthAz, liveEarthEl, hoveredAz, elMin, elMax, liveEarthVis, liveSunVis, limitedFlags, azs])
 
   // Responsive canvas width observer
   useEffect(() => {
@@ -328,7 +341,7 @@ export default function HorizonSkyline({ siteData, site, currentStep }) {
         alignItems: 'center',
         justifyContent: 'space-between'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#e2e8f0' }}>
             360° Panoramic Horizon Skyline
           </span>
@@ -342,6 +355,19 @@ export default function HorizonSkyline({ siteData, site, currentStep }) {
           }}>
             {site?.name} · LOLA DTM horizon
           </span>
+          {numLimited > 0 && (
+            <span style={{
+              fontSize: '0.62rem',
+              color: 'var(--color-caution)',
+              background: 'rgba(245, 158, 11, 0.12)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              borderRadius: '3px',
+              padding: '1px 6px',
+              fontFamily: 'monospace'
+            }}>
+              Horizon limited to ~1.9 km ({numLimited}/360 az rays reach tile edge)
+            </span>
+          )}
         </div>
 
         {/* Live status pills */}
@@ -420,6 +446,12 @@ export default function HorizonSkyline({ siteData, site, currentStep }) {
           <span style={{ width: '16px', height: '1px', background: 'rgba(100,116,139,0.5)', display: 'inline-block', borderStyle: 'dashed' }}></span>
           0° horizon (true flat)
         </span>
+        {numLimited > 0 && (
+          <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--color-caution)' }}>
+            <span style={{ width: '8px', height: '3px', background: 'rgba(239, 68, 68, 0.7)', display: 'inline-block' }}></span>
+            Tile boundary reached (~1.9 km limit)
+          </span>
+        )}
       </div>
     </div>
   )

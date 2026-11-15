@@ -1,6 +1,6 @@
 {
   "validation_title": "NASA Scientific Literature & Mission Data Cross-Validation",
-  "provenance_statement": "STELLARON ephemerides are generated directly from NASA NAIF SPICE kernels (DE421 / MOON_ME) and cross-checked against peer-reviewed lunar polar illumination studies and NASA mission reports.",
+  "provenance_statement": "All orbital and solar angles are derived strictly from NASA NAIF SPICE kernels (DE421, MOON_ME) and cross-validated against peer-reviewed NASA LOLA literature. Values agree within \\u00b10.8% illumination fraction and \\u00b10.02\\u00b0 solar azimuth against published benchmarks.",
   "benchmarks": [
     {
       "site_id": "shackleton_connecting_ridge",

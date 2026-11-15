@@ -173,7 +173,12 @@ export default function EnergyPanel({ siteData, site }) {
       {/* SoC History Chart */}
       {hasData ? (
         <div className="panel-section">
-          <h3>Battery State of Charge (SoC) History</h3>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <h3 style={{ margin: 0 }}>Battery State of Charge (SoC) History</h3>
+            <span style={{ fontSize: '10px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
+              20% / 50% thresholds are default user-adjustable inputs, not flight requirements
+            </span>
+          </div>
           <div className="chart-wrapper" style={{ height: 200 }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={socData} margin={{ top: 5, right: 10, left: -15, bottom: 5 }}>
@@ -192,11 +197,11 @@ export default function EnergyPanel({ siteData, site }) {
                 />
                 <Tooltip content={<CustomTooltip />} />
 
-                {/* Reserve threshold lines */}
+                {/* Reserve threshold lines (default, user-adjustable) */}
                 <ReferenceLine y={0.2} stroke="var(--danger)" strokeDasharray="4 2" strokeWidth={1}
-                  label={{ value: 'Reserve 20%', fill: 'var(--danger)', fontSize: 9, position: 'right' }} />
+                  label={{ value: 'Reserve 20% (default, adjustable)', fill: 'var(--danger)', fontSize: 9, position: 'right' }} />
                 <ReferenceLine y={0.5} stroke="var(--warning)" strokeDasharray="4 2" strokeWidth={1}
-                  label={{ value: '50%', fill: 'var(--warning)', fontSize: 9, position: 'right' }} />
+                  label={{ value: '50% (default, adjustable)', fill: 'var(--warning)', fontSize: 9, position: 'right' }} />
 
                 {/* Deficit shading */}
                 {deficitIntervals.map((d, i) => (

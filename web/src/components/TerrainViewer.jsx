@@ -443,30 +443,40 @@ export default function TerrainViewer({ site, siteData }) {
             <div style={{ color: 'var(--color-border)' }}>|</div>
             <div>
               <span style={{ color: 'var(--text-tertiary)', fontSize: '10px', textTransform: 'uppercase' }}>Mean Slope: </span>
-              <strong style={{ color: meshData.mean_slope_deg > 20 ? 'var(--color-hazard)' : 'var(--color-safe)' }}>
+              <strong style={{ color: meshData.mean_slope_deg > 15 ? 'var(--color-hazard)' : 'var(--color-safe)' }}>
                 {meshData.mean_slope_deg}°
               </strong>
+              <span style={{ color: 'var(--text-tertiary)', fontSize: '9px', marginLeft: '3px' }}>(15° default limit)</span>
             </div>
             <div style={{ color: 'var(--color-border)' }}>|</div>
             <div>
-              <span style={{ color: 'var(--text-tertiary)', fontSize: '10px', textTransform: 'uppercase' }}>Safety Score: </span>
+              <span style={{ color: 'var(--text-tertiary)', fontSize: '10px', textTransform: 'uppercase' }}>Modelled Score: </span>
               <strong style={{ color: 'var(--color-caution)' }}>
                 {meshData.landing_safety_score || 85}/100
               </strong>
+              <span style={{ color: 'var(--text-tertiary)', fontSize: '9px', marginLeft: '3px' }}>(Slope constraint)</span>
             </div>
           </div>
 
           <div style={{
-            fontSize: '11px',
-            color: 'var(--text-secondary)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: '2px',
             background: 'var(--color-panel-glass)',
             backdropFilter: 'blur(8px)',
-            padding: '6px 12px',
+            padding: '5px 12px',
             borderRadius: 'var(--radius-md)',
             fontFamily: 'var(--font-mono)',
             border: '1px solid var(--color-border)',
+            pointerEvents: 'auto',
           }}>
-            Scale: <span style={{ color: 'var(--color-cyan)' }}>3.84 km</span> (30m/px)
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+              Scale: <span style={{ color: 'var(--color-cyan)' }}>3.84 km</span> (30m/px) · <span style={{ color: 'var(--color-caution)' }}>Horizon limited to ~1.9 km</span>
+            </div>
+            <div style={{ fontSize: '9px', color: 'var(--text-tertiary)' }}>
+              Note: 30m DTM cannot resolve rocks/small craters; distant massifs &gt;2km not in tile
+            </div>
           </div>
         </div>
       )}

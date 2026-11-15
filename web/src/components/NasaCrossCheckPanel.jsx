@@ -48,15 +48,15 @@ export default function NasaCrossCheckPanel({ selectedSite }) {
             border: '1px solid rgba(34, 197, 94, 0.3)',
             borderRadius: '999px',
             padding: '2px 10px',
-            fontSize: '0.68rem',
+            fontSize: '0.66rem',
             fontWeight: 700,
-            letterSpacing: '0.05em'
+            letterSpacing: '0.04em'
           }}>
-            100% NASA BENCHMARK CONVERGENCE
+            AGREES WITHIN ±0.8% ILLUMINATION &amp; ±0.02° ANGLE
           </span>
         </div>
         <p style={{ margin: 0, fontSize: '0.74rem', color: '#94a3b8', lineHeight: 1.4 }}>
-          {crosscheck?.provenance_statement || 'All orbital and solar angles are derived strictly from NASA NAIF SPICE kernels (DE421, MOON_ME) and cross-validated against peer-reviewed NASA LOLA literature.'}
+          {crosscheck?.provenance_statement || 'All orbital and solar angles are derived strictly from NASA NAIF SPICE kernels (DE421, MOON_ME) and cross-validated against peer-reviewed NASA LOLA literature. Values agree within ±0.8% illumination fraction and ±0.02° solar angle for the benchmark metrics in the table.'}
         </p>
       </div>
 
@@ -168,10 +168,10 @@ export default function NasaCrossCheckPanel({ selectedSite }) {
           padding: '12px 14px'
         }}>
           <div style={{ color: '#fbbf24', fontSize: '0.78rem', fontWeight: 600, marginBottom: '4px' }}>
-            LOLA Topography Standard
+            LOLA Topography Standard &amp; Resolution Scope
           </div>
           <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8', lineHeight: 1.4 }}>
-            Every site incorporates NASA LOLA reference elevation datum. Slope gradients evaluate landing safety within the Artemis III 15° lander tilt boundary.
+            Every site incorporates NASA LOLA reference elevation datum. The 15° slope limit is a default, user-adjustable threshold. Note that 30 m terrain resolution cannot resolve boulder fields or decameter craters; slope indicates regional terrain gradient, not a certified landing-hazard assessment.
           </p>
         </div>
 
@@ -182,10 +182,10 @@ export default function NasaCrossCheckPanel({ selectedSite }) {
           padding: '12px 14px'
         }}>
           <div style={{ color: '#34d399', fontSize: '0.78rem', fontWeight: 600, marginBottom: '4px' }}>
-            Zero Fabrication Guarantee
+            Every Value Traces to a Dataset or Labelled Assumption
           </div>
           <p style={{ margin: 0, fontSize: '0.72rem', color: '#94a3b8', lineHeight: 1.4 }}>
-            All metrics are cryptographically bound to canonical SHA-256 output hashes. No hallucinated DEMs, no simulated numbers without traceable kernels.
+            No simulated parameters exist without traceable SPICE kernels or explicitly documented assumptions. Each run produces a canonical reproducibility hash (SHA-256); a hash proves the run is reproducible, not that it is externally correct.
           </p>
         </div>
       </div>

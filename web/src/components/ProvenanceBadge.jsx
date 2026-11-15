@@ -34,10 +34,13 @@ export default function ProvenanceBadge({ siteData, site }) {
 
         {/* Left column */}
         <div>
-          <h3 style={{ color: 'var(--accent)', fontSize: '0.8rem', margin: '0 0 8px' }}>Run Identity</h3>
+          <h3 style={{ color: 'var(--accent)', fontSize: '0.8rem', margin: '0 0 8px' }}>Run Identity &amp; Reproducibility</h3>
           <Chip label="Run ID" value={run_id} mono />
           <Chip label="Computed At" value={computed_at ?? 'N/A'} />
-          <Chip label="SHA-256" value={result_sha256 ? `${result_sha256.slice(0, 20)}…${result_sha256.slice(-8)}` : 'N/A'} mono />
+          <Chip label="Reproducibility Hash (SHA-256)" value={result_sha256 ? `${result_sha256.slice(0, 20)}…${result_sha256.slice(-8)}` : 'N/A'} mono />
+          <div style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', marginBottom: 8 }}>
+            Hash proves execution reproducibility; it does not guarantee external ground-truth correctness.
+          </div>
 
           <h3 style={{ color: 'var(--accent)', fontSize: '0.8rem', margin: '12px 0 8px' }}>SPICE Kernels</h3>
           {kernels.map((k, i) => (

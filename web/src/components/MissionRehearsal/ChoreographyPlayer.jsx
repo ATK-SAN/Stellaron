@@ -979,26 +979,26 @@ export default function ChoreographyPlayer({
     return lookupSolarEphemeris(timeSeriesData, milestones.landingDate)
   }, [timeSeriesData, milestones.landingDate])
 
-  // Verdict & Power Evaluation
+  // Modelled Constraint Check & Power Evaluation
   const { verdict, minSoc, verdictNote } = useMemo(() => {
     const tol = site.tolerance_days ?? 7
     if (delaySlipDays > tol + 1 || !solarEphemeris.sunVisible) {
       return {
-        verdict: 'FAILS',
+        verdict: 'FAILS (Modelled)',
         minSoc: 0.13,
-        verdictNote: 'Mission tolerance exceeded. Touchdown in crater shadow drops battery below 20% reserve.',
+        verdictNote: 'Mission tolerance exceeded. Modelled touchdown in crater shadow drops battery below 20% default reserve floor.',
       }
     } else if (delaySlipDays >= tol - 1) {
       return {
-        verdict: 'MARGINAL',
+        verdict: 'MARGINAL (Modelled)',
         minSoc: 0.24,
-        verdictNote: 'Tight solar margin. Grazing terrain elevation causes low battery buffer.',
+        verdictNote: 'Tight solar margin. Grazing terrain elevation causes low battery buffer against default threshold.',
       }
     } else {
       return {
-        verdict: 'SURVIVES',
+        verdict: 'SURVIVES (Modelled)',
         minSoc: 0.55,
-        verdictNote: 'Continuous solar illumination on ridge crest maintains battery above 50%.',
+        verdictNote: 'Continuous solar illumination on ridge crest maintains battery above 50% default buffer.',
       }
     }
   }, [delaySlipDays, site.tolerance_days, solarEphemeris.sunVisible])
@@ -1047,9 +1047,9 @@ export default function ChoreographyPlayer({
             DEMO:
           </span>
           {[
-            { id: 'A', siteId: 'shackleton_connecting_ridge', label: 'Demo A', defaultSlip: 0 },
-            { id: 'B', siteId: 'malapert_mountain', label: 'Demo B', defaultSlip: 0 },
-            { id: 'C', siteId: 'nobile_rim_1', label: 'Demo C', defaultSlip: 3 },
+            { id: 'A', siteId: 'shackleton_connecting_ridge', label: 'Demo A (Demo Scenario)', defaultSlip: 0 },
+            { id: 'B', siteId: 'malapert_mountain', label: 'Demo B (Demo Scenario)', defaultSlip: 0 },
+            { id: 'C', siteId: 'nobile_rim_1', label: 'Demo C (Demo Scenario)', defaultSlip: 3 },
           ].map(d => {
             const isMatch = activeDemo === d.id || siteId === d.siteId
             return (
@@ -1060,6 +1060,7 @@ export default function ChoreographyPlayer({
                   setDelaySlipDays(d.defaultSlip)
                 }}
                 className={`segmented-item ${isMatch ? 'active' : ''}`}
+                title="Illustrative model demo scenario"
               >
                 {d.label}
               </button>
@@ -1091,6 +1092,35 @@ export default function ChoreographyPlayer({
         </div>
       </div>
 
+      {/* ── Schematic Disclaimer Badge (On-Screen Requirement) ── */}
+      <div style={{
+        position: 'absolute',
+        top: 52,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 12,
+        pointerEvents: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        background: 'rgba(17, 24, 39, 0.90)',
+        backdropFilter: 'blur(8px)',
+        border: '1px solid var(--color-border)',
+        borderRadius: 'var(--radius-pill)',
+        padding: '3px 12px',
+        fontSize: '11px',
+        fontFamily: 'var(--font-mono)',
+        color: 'var(--text-secondary)',
+        whiteSpace: 'nowrap',
+      }}>
+        <AlertTriangle size={12} strokeWidth={1.5} style={{ color: 'var(--color-caution)' }} />
+        <span>
+          {viewMode === 'flight'
+            ? 'Illustrative path, not a trajectory design. Trajectory rendered for visual orientation only.'
+            : 'Illustrative touchdown choreography, not a flight dynamics descent guidance solution · Local DTM horizon limited to ~1.9 km.'}
+        </span>
+      </div>
+
       {/* ── Collapsible Site Detail Card (Pinned Top-Left, Max 320px Wide) ── */}
       <div style={{
         position: 'absolute',
@@ -1118,7 +1148,7 @@ export default function ChoreographyPlayer({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span className={`status-chip ${verdict === 'SURVIVES' ? 'status-chip-safe' : verdict === 'MARGINAL' ? 'status-chip-caution' : 'status-chip-hazard'}`}>
+            <span className={`status-chip ${verdict.includes('SURVIVES') ? 'status-chip-safe' : verdict.includes('MARGINAL') ? 'status-chip-caution' : 'status-chip-hazard'}`}>
               {verdict}
             </span>
             <button

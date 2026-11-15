@@ -15,8 +15,8 @@ const VERDICT_CONFIG = {
     glow: 'rgba(16, 185, 129, 0.20)',
     border: 'rgba(16, 185, 129, 0.35)',
     bg: 'rgba(16, 185, 129, 0.08)',
-    label: 'SURVIVES',
-    text: 'Modelled mission parameters satisfy all constraint thresholds.',
+    label: 'SURVIVES (Modelled)',
+    text: 'Modelled mission parameters satisfy all active constraint thresholds.',
   },
   marginal: {
     Icon: AlertTriangle,
@@ -24,7 +24,7 @@ const VERDICT_CONFIG = {
     glow: 'rgba(245, 158, 11, 0.20)',
     border: 'rgba(245, 158, 11, 0.35)',
     bg: 'rgba(245, 158, 11, 0.08)',
-    label: 'MARGINAL',
+    label: 'MARGINAL (Modelled)',
     text: 'Modelled mission parameters operate within tolerance margin of limiting factors.',
   },
   fails: {
@@ -33,7 +33,7 @@ const VERDICT_CONFIG = {
     glow: 'rgba(239, 68, 68, 0.20)',
     border: 'rgba(239, 68, 68, 0.35)',
     bg: 'rgba(239, 68, 68, 0.08)',
-    label: 'FAILS',
+    label: 'FAILS (Modelled)',
     text: 'Modelled mission parameters violate one or more constraint thresholds.',
   },
 }
@@ -182,7 +182,7 @@ export default function VerdictBadge({ verdict, limiting_factor, result_sha256, 
         </div>
       )}
 
-      {/* Deterministic Result Hash Provenance */}
+      {/* Deterministic Reproducibility Hash */}
       {result_sha256 && (
         <div style={{
           display: 'flex',
@@ -195,7 +195,7 @@ export default function VerdictBadge({ verdict, limiting_factor, result_sha256, 
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Shield size={13} strokeWidth={1.5} style={{ color: 'var(--color-cyan)' }} />
-            <span>Deterministic Result SHA-256</span>
+            <span>Reproducibility Hash (SHA-256) · Proves run execution is reproducible; conditional on inputs</span>
           </div>
           <code style={{
             fontFamily: 'var(--font-mono)',
