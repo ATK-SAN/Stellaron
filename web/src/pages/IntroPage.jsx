@@ -97,12 +97,11 @@ export default function IntroPage({ navigate }) {
           </div>
         </div>
 
-        <div className={styles.navActions}>
-          <button onClick={handleLaunch} className={styles.btnPrimary} aria-label="Launch Navigator Dashboard">
-            Launch Navigator
-            <ArrowRight size={15} strokeWidth={2} />
-          </button>
-        </div>
+        <nav className={styles.navActions} aria-label="Intro navigation">
+          <a href="#how-it-works" onClick={handleScrollToHowItWorks} className={styles.navLink}>
+            How it works
+          </a>
+        </nav>
       </header>
 
       {/* Main Content Area */}
@@ -298,14 +297,17 @@ export default function IntroPage({ navigate }) {
                 </p>
               </div>
               <div className={styles.stepFrame}>
-                <img
-                  src="/intro/step-1-explorer.webp"
-                  alt="STELLARON 3D Site Explorer displaying candidate site list and lunar topography"
-                  width="720"
-                  height="464"
-                  loading="lazy"
-                  className={styles.stepImg}
-                />
+                <picture>
+                  <source srcSet="/intro/step-1-explorer.webp" type="image/webp" />
+                  <img
+                    src="/intro/step-1-explorer.jpg"
+                    alt="STELLARON 3D Site Explorer displaying candidate site list, 3D lunar globe, and contextual telemetry panel for Shackleton Connecting Ridge"
+                    width="1024"
+                    height="485"
+                    loading="lazy"
+                    className={styles.stepImg}
+                  />
+                </picture>
               </div>
             </div>
 
@@ -319,14 +321,17 @@ export default function IntroPage({ navigate }) {
                 </p>
               </div>
               <div className={styles.stepFrame}>
-                <img
-                  src="/intro/step-2-rehearsal.webp"
-                  alt="Mission Rehearsal interface with departure slip calendar and battery survival curves"
-                  width="720"
-                  height="400"
-                  loading="lazy"
-                  className={styles.stepImg}
-                />
+                <picture>
+                  <source srcSet="/intro/step-2-rehearsal.webp" type="image/webp" />
+                  <img
+                    src="/intro/step-2-rehearsal.jpg"
+                    alt="STELLARON Mission Rehearsal interface with mission parameter inputs, departure dates, transit durations, and lander hardware battery configurations"
+                    width="1024"
+                    height="450"
+                    loading="lazy"
+                    className={styles.stepImg}
+                  />
+                </picture>
               </div>
             </div>
 
@@ -340,14 +345,17 @@ export default function IntroPage({ navigate }) {
                 </p>
               </div>
               <div className={styles.stepFrame}>
-                <img
-                  src="/intro/step-3-crosscheck.webp"
-                  alt="NASA scientific literature cross-check matrix and reproducibility hash cards"
-                  width="720"
-                  height="420"
-                  loading="lazy"
-                  className={styles.stepImg}
-                />
+                <picture>
+                  <source srcSet="/intro/step-3-crosscheck.webp" type="image/webp" />
+                  <img
+                    src="/intro/step-3-crosscheck.jpg"
+                    alt="STELLARON NASA Scientific Literature Cross-Validation Matrix showing side-by-side benchmark comparison against Mazarico 2011 and Gläser 2014"
+                    width="1024"
+                    height="494"
+                    loading="lazy"
+                    className={styles.stepImg}
+                  />
+                </picture>
               </div>
             </div>
           </div>
@@ -419,10 +427,6 @@ export default function IntroPage({ navigate }) {
             <div>
               STELLARON · Built for NASA Space Apps Challenge 2026 · Not an official NASA product.
             </div>
-            <button onClick={handleLaunch} className={styles.btnPrimary} style={{ padding: '6px 14px', fontSize: '12px' }}>
-              Launch Navigator
-              <ArrowRight size={13} strokeWidth={2} />
-            </button>
           </div>
         </div>
       </footer>

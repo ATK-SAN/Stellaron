@@ -117,6 +117,19 @@
   gap: 16px;
 }
 
+.navLink {
+  color: #94A3B8;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  font-family: var(--font-sans, sans-serif);
+  transition: color 0.15s ease;
+}
+
+.navLink:hover {
+  color: #22D3EE;
+}
+
 .btnPrimary {
   display: inline-flex;
   align-items: center;
