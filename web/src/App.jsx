@@ -127,19 +127,26 @@ export default function App() {
         {/* Left: STELLARON Wordmark + Context */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{
-            width: '26px',
-            height: '26px',
-            borderRadius: 'var(--radius-sm)',
-            background: 'var(--color-cyan)',
-            color: '#05070D',
+            width: '28px',
+            height: '28px',
+            borderRadius: '6px',
+            background: '#0F1524',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontWeight: 800,
-            fontSize: '13px',
-            boxShadow: '0 0 14px rgba(34, 211, 238, 0.4)',
+            overflow: 'hidden',
+            boxShadow: '0 0 12px rgba(34, 211, 238, 0.25)',
+            flexShrink: 0,
           }}>
-            S
+            <img
+              src="/brand/stellaron-mark-32.png"
+              srcSet="/brand/stellaron-mark-32.png 1x, /brand/stellaron-mark-64.png 2x, /brand/stellaron-mark-128.png 3x"
+              alt="STELLARON"
+              width="28"
+              height="28"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
           </div>
 
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
@@ -316,6 +323,7 @@ export default function App() {
                         onSelectSite={setSelectedSite}
                         sunAzDeg={siteData?.time_series?.sun_az_deg?.[0] ?? 0}
                         siteData={siteData}
+                        onSwitchToGlobe={() => setView3DMode('globe')}
                       />
                     </div>
                   )}

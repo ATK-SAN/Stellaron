@@ -1,4 +1,8 @@
-# STELLARON 🌙
+<p align="center">
+  <img src="docs/brand/stellaron-lockup.png" alt="STELLARON — Lunar Landing-Site Navigator" width="600" />
+</p>
+
+# STELLARON
 
 **Lunar Landing-Site Navigator** — NASA Space Apps 2026
 

@@ -11,12 +11,13 @@
  */
 
 import { useState, useRef, useEffect, useMemo, Suspense } from 'react'
-import { Canvas, useFrame, useLoader } from '@react-three/fiber'
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber'
 import { OrbitControls, Stars, Html } from '@react-three/drei'
 import * as THREE from 'three'
 import {
   Play,
   Pause,
+  RotateCcw,
   Camera,
   Compass,
   Sun,
@@ -894,6 +895,26 @@ function generateAdaptedFrames(site, plan, delaySlipDays) {
   }
 }
 
+// ─── Flight Camera Controller with Pose Reset ─────────────────────────────────
+function FlightCameraController({ resetKey, initialPos = [3.2, 3.8, 4.5], initialTarget = [0, 0, 0] }) {
+  const { camera } = useThree()
+  const controlsRef = useRef()
+
+  useEffect(() => {
+    if (camera) {
+      camera.position.set(...initialPos)
+      camera.fov = 46
+      camera.updateProjectionMatrix()
+    }
+    if (controlsRef.current) {
+      controlsRef.current.target.set(...initialTarget)
+      controlsRef.current.reset()
+    }
+  }, [resetKey, camera, initialPos, initialTarget])
+
+  return <OrbitControls ref={controlsRef} makeDefault enableDamping dampingFactor={0.06} />
+}
+
 // ─── Main ChoreographyPlayer Component ─────────────────────────────────────────
 export default function ChoreographyPlayer({
   plan,
@@ -907,18 +928,47 @@ export default function ChoreographyPlayer({
     return SITE_METADATA[siteId] || SITE_METADATA['shackleton_connecting_ridge']
   }, [siteId])
 
-  // Interactive Delay / View Mode State
+  // Interactive Delay / View Mode State (Default 'flight' per 6b.B)
   const [delaySlipDays, setDelaySlipDays] = useState(0)
-  const [viewMode, setViewMode] = useState('ridge') // 'flight' | 'ridge'
+  const [viewMode, setViewMode] = useState('flight') // 'flight' | 'ridge'
   const [terrainRenderMode, setTerrainRenderMode] = useState('elevation') // 'elevation' | 'regolith'
   const [ridgeCameraPreset, setRidgeCameraPreset] = useState('oblique') // 'oblique' | 'target' | 'horizon' | 'polar'
   const [showLabels, setShowLabels] = useState(true)
   const [isSiteCardExpanded, setIsSiteCardExpanded] = useState(false)
 
+  // Explicit Playback Reset State Transition (Section 6b.B)
+  const [cameraResetKey, setCameraResetKey] = useState(0)
+  const hasSwitchedToRidgeRef = useRef(false)
+
+  const resetPlaybackView = () => {
+    setViewMode('flight')
+    hasSwitchedToRidgeRef.current = false
+    setCameraResetKey(k => k + 1)
+  }
+
   // Playback Animation State
   const [currentStep, setCurrentStep] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [playSpeed, setPlaySpeed] = useState(1)
+
+  // Restart Triggers per 6b.B: site change, slip change, plan change
+  useEffect(() => {
+    setCurrentStep(0)
+    setIsPlaying(false)
+    resetPlaybackView()
+  }, [site.id])
+
+  useEffect(() => {
+    setCurrentStep(0)
+    setIsPlaying(false)
+    resetPlaybackView()
+  }, [delaySlipDays])
+
+  useEffect(() => {
+    setCurrentStep(0)
+    setIsPlaying(false)
+    resetPlaybackView()
+  }, [plan])
 
   // Topographic & Ephemeris Data State
   const [meshData, setMeshData] = useState(null)
@@ -959,20 +1009,46 @@ export default function ChoreographyPlayer({
 
   const curFrame = frames[currentStep] || frames[0]
 
-  // Playback Timer with automatic transition to ridge at descent
+  // Playback Timer with automatic transition to ridge at descent (Section 6b.B)
   useEffect(() => {
     if (!isPlaying) return
     const interval = setInterval(() => {
       setCurrentStep(prev => {
-        const next = prev >= frames.length - 1 ? 0 : prev + 1
-        if (viewMode === 'flight' && next >= 92) {
+        if (prev >= frames.length - 1) {
+          setIsPlaying(false)
+          return prev
+        }
+        const next = prev + 1
+        if (!hasSwitchedToRidgeRef.current && next >= 92) {
+          hasSwitchedToRidgeRef.current = true
           setViewMode('ridge')
         }
         return next
       })
     }, 120 / playSpeed)
     return () => clearInterval(interval)
-  }, [isPlaying, playSpeed, frames.length, viewMode])
+  }, [isPlaying, playSpeed, frames.length])
+
+  const isAtEnd = currentStep >= frames.length - 1
+
+  const handlePlayToggle = () => {
+    if (isPlaying) {
+      setIsPlaying(false)
+    } else {
+      if (isAtEnd) {
+        setCurrentStep(0)
+        resetPlaybackView()
+      }
+      setIsPlaying(true)
+    }
+  }
+
+  const handleScrubberChange = (val) => {
+    setCurrentStep(val)
+    if (val < 92 && hasSwitchedToRidgeRef.current) {
+      resetPlaybackView()
+    }
+  }
 
   // Solar Ephemeris at Touchdown
   const solarEphemeris = useMemo(() => {
@@ -1313,7 +1389,7 @@ export default function ChoreographyPlayer({
           <Suspense fallback={null}>
             {viewMode === 'flight' ? (
               <>
-                <OrbitControls makeDefault enableDamping dampingFactor={0.06} />
+                <FlightCameraController resetKey={cameraResetKey} />
                 <MacroSunObject showLabels={showLabels} />
                 <MacroEarthObject position={curFrame.earthPos} showLabels={showLabels} />
                 <MacroMoonObject position={curFrame.moonPos} site={site} showLabels={showLabels} />
@@ -1360,12 +1436,18 @@ export default function ChoreographyPlayer({
         {/* Play/Pause & Speed */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <button
-            onClick={() => setIsPlaying(!isPlaying)}
+            onClick={handlePlayToggle}
             className={`btn ${isPlaying ? 'btn-secondary' : 'btn-primary'}`}
             style={{ padding: '6px 14px', fontSize: '12px' }}
           >
-            {isPlaying ? <Pause size={13} strokeWidth={2} /> : <Play size={13} strokeWidth={2} />}
-            <span>{isPlaying ? 'Pause' : 'Play'}</span>
+            {isPlaying ? (
+              <Pause size={13} strokeWidth={2} />
+            ) : isAtEnd ? (
+              <RotateCcw size={13} strokeWidth={2} />
+            ) : (
+              <Play size={13} strokeWidth={2} />
+            )}
+            <span>{isPlaying ? 'Pause' : isAtEnd ? 'Replay' : 'Play'}</span>
           </button>
           {[1, 5, 20].map(s => (
             <button
@@ -1395,7 +1477,7 @@ export default function ChoreographyPlayer({
             min={0}
             max={frames.length - 1}
             value={currentStep}
-            onChange={e => setCurrentStep(Number(e.target.value))}
+            onChange={e => handleScrubberChange(Number(e.target.value))}
             style={{ flex: 1 }}
           />
           <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
