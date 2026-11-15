@@ -23,6 +23,7 @@ import {
   AlertTriangle,
   ShieldAlert,
   ArrowRight,
+  Compass,
 } from 'lucide-react'
 
 function calculateScore(site) {
@@ -56,6 +57,7 @@ export default function ContextualSitePanel({
 
   // Detect realistic hazard flags from site parameters
   const hazards = useMemo(() => {
+    if (!site) return []
     const list = []
     if (slopeDeg > 15) list.push({ label: 'Slope >15° (Default limit, adjustable)', severity: 'hazard' })
     else if (slopeDeg > 8) list.push({ label: 'Moderate Incline', severity: 'caution' })
@@ -78,11 +80,13 @@ export default function ContextualSitePanel({
 
   // Executive briefing copy
   const briefingText = useMemo(() => {
+    if (!site) return ''
     return `${site?.name}: Modelled sunlight coverage is ${sunPct}% and Earth visibility is ${earthPct}%. Terrain elevation is ${elevationM} meters with an average slope of ${slopeDeg} degrees. Safety evaluation score is ${score} of 100.`
   }, [site, sunPct, earthPct, elevationM, slopeDeg, score])
 
   const handleSpeak = useCallback(() => {
     if (!('speechSynthesis' in window)) return
+    if (!site) return
     if (isSpeaking) {
       window.speechSynthesis.cancel()
       setIsSpeaking(false)
@@ -95,20 +99,71 @@ export default function ContextualSitePanel({
     utterance.onerror = () => setIsSpeaking(false)
     setIsSpeaking(true)
     window.speechSynthesis.speak(utterance)
-  }, [briefingText, isSpeaking])
+  }, [site, briefingText, isSpeaking])
 
   const handleCopy = useCallback(() => {
+    if (!site) return
     navigator.clipboard?.writeText(briefingText)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
-  }, [briefingText])
+  }, [site, briefingText])
 
   const handleDelaySlider = (val) => {
     setLocalDelay(val)
     if (onDelayChange) onDelayChange(val)
   }
 
-  if (!site) return null
+  if (!site) {
+    return (
+      <aside style={{
+        width: '340px',
+        flexShrink: 0,
+        height: '100%',
+        background: 'var(--color-surface)',
+        borderLeft: '1px solid var(--color-border)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '32px 24px',
+        textAlign: 'center',
+      }}>
+        <div style={{
+          width: '56px',
+          height: '56px',
+          borderRadius: '50%',
+          background: 'rgba(34, 211, 238, 0.08)',
+          border: '1px solid var(--color-border-cyan)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: '16px',
+          color: 'var(--color-cyan)',
+        }}>
+          <Compass size={28} strokeWidth={1.5} />
+        </div>
+        <div style={{
+          fontSize: '13px',
+          fontFamily: 'var(--font-sans)',
+          fontWeight: 600,
+          color: 'var(--text-primary)',
+          marginBottom: '8px',
+          letterSpacing: '0.04em',
+        }}>
+          No Site Selected
+        </div>
+        <p style={{
+          fontSize: '12px',
+          color: 'var(--text-secondary)',
+          lineHeight: 1.5,
+          margin: 0,
+          maxWidth: '260px',
+        }}>
+          Pick a site on the globe or in the list to see its sunlight, Earth link, and power.
+        </p>
+      </aside>
+    )
+  }
 
   return (
     <div style={{

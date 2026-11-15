@@ -40,6 +40,88 @@ import OrthographicPolarMap from './components/OrthographicPolarMap'
 import ContextualSitePanel from './components/ContextualSitePanel'
 import MissionRehearsal from './components/MissionRehearsal'
 
+function WorkspaceNoSiteState({ title, description, onReturnToExplorer, sites, onSelectSite }) {
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      width: '100%',
+      background: 'var(--color-bg)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '32px',
+      textAlign: 'center',
+    }}>
+      <div style={{
+        width: '64px',
+        height: '64px',
+        borderRadius: '50%',
+        background: 'rgba(34, 211, 238, 0.08)',
+        border: '1px solid var(--color-border-cyan)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: '20px',
+        color: 'var(--color-cyan)',
+      }}>
+        <Compass size={32} strokeWidth={1.5} />
+      </div>
+      <h3 style={{
+        margin: '0 0 8px 0',
+        fontSize: '18px',
+        fontWeight: 700,
+        color: 'var(--text-primary)',
+        fontFamily: 'var(--font-sans)',
+      }}>
+        {title || 'No Landing Site Selected'}
+      </h3>
+      <p style={{
+        margin: '0 0 24px 0',
+        fontSize: '13px',
+        color: 'var(--text-secondary)',
+        maxWidth: '420px',
+        lineHeight: 1.5,
+      }}>
+        {description || 'Choose a landing site from the candidate library to view its telemetry and simulations.'}
+      </p>
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <button
+          onClick={onReturnToExplorer}
+          className="btn btn-primary"
+          style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}
+        >
+          <Compass size={15} strokeWidth={1.5} />
+          <span>Return to Explorer</span>
+        </button>
+        {sites && sites.length > 0 && onSelectSite && (
+          <select
+            onChange={(e) => {
+              const s = sites.find(x => x.id === e.target.value)
+              if (s) onSelectSite(s)
+            }}
+            defaultValue=""
+            style={{
+              background: 'var(--color-panel)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
+              color: 'var(--text-primary)',
+              padding: '8px 12px',
+              fontSize: '12px',
+              cursor: 'pointer',
+            }}
+          >
+            <option value="" disabled>Or pick a site here…</option>
+            {sites.map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const [sites, setSites] = useState([])
   const [selectedSite, setSelectedSite] = useState(null)
@@ -59,15 +141,52 @@ export default function App() {
     return () => clearInterval(timer)
   }, [])
 
-  // Load candidate sites library on mount
+  // Pressing Esc deselects current site
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setSelectedSite(null)
+        setSiteData(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  // Toggle selection: click again or choose a site
+  const handleSelectSite = (site) => {
+    if (!site) {
+      setSelectedSite(null)
+      setSiteData(null)
+      return
+    }
+    setSelectedSite(prev => {
+      if (prev?.id === site.id) {
+        setSiteData(null)
+        return null
+      }
+      return site
+    })
+  }
+
+  // Load candidate sites library on mount (no default selection; deep link ?site=<id> supported)
   useEffect(() => {
     fetch('/data/library_index.json')
       .then(r => r.json())
       .then(data => {
-        setSites(data.sites || [])
-        if (data.sites && data.sites.length > 0) {
-          const defaultSite = data.sites.find(s => s.id === 'shackleton_connecting_ridge') || data.sites[0]
-          setSelectedSite(defaultSite)
+        const loadedSites = data.sites || []
+        setSites(loadedSites)
+        try {
+          const params = new URLSearchParams(window.location.search)
+          const siteParam = params.get('site')
+          if (siteParam && loadedSites.length > 0) {
+            const match = loadedSites.find(s => s.id === siteParam)
+            if (match) {
+              setSelectedSite(match)
+            }
+          }
+        } catch (e) {
+          // ignore
         }
       })
       .catch(err => console.error('Failed to load library_index.json', err))
@@ -239,14 +358,14 @@ export default function App() {
         {/* ── VIEWPORT CONTENT ── */}
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           {/* WINDOW 1: 3D Site Explorer (3-Column Layout: Site List | Full-Bleed 3D | Context Panel) */}
-          {activeWindow === 'explorer' && selectedSite && (
+          {activeWindow === 'explorer' && (
             <div style={{ display: 'flex', width: '100%', height: '100%', overflow: 'hidden' }}>
               {/* Column 1: Site Selector (280px) */}
               <aside style={{ width: '280px', flexShrink: 0, height: '100%', overflow: 'hidden' }}>
                 <SiteSelector
                   sites={sites}
                   selectedSite={selectedSite}
-                  onSelect={(site) => setSelectedSite(site)}
+                  onSelect={handleSelectSite}
                 />
               </aside>
 
@@ -304,14 +423,36 @@ export default function App() {
                       <HorizonGlobe
                         sites={sites}
                         selectedSite={selectedSite}
-                        onSelect={setSelectedSite}
+                        onSelect={handleSelectSite}
                       />
                     </div>
                   )}
 
                   {(view3DMode === 'split' || view3DMode === 'terrain') && (
                     <div style={{ flex: '1', height: '100%', position: 'relative' }}>
-                      <TerrainViewer site={selectedSite} siteData={siteData} />
+                      {selectedSite ? (
+                        <TerrainViewer site={selectedSite} siteData={siteData} />
+                      ) : (
+                        <div style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          height: '100%',
+                          width: '100%',
+                          background: 'rgba(5, 7, 13, 0.85)',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: '24px',
+                          textAlign: 'center',
+                        }}>
+                          <Mountain size={36} strokeWidth={1.5} style={{ color: 'var(--text-tertiary)', marginBottom: 12 }} />
+                          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>
+                            No Site Selected
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', maxWidth: '280px', lineHeight: 1.5 }}>
+                            Select a candidate landing site from the left list or 3D globe to stream its LOLA topographic mesh.
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -320,7 +461,7 @@ export default function App() {
                       <OrthographicPolarMap
                         sites={sites}
                         selectedSite={selectedSite}
-                        onSelectSite={setSelectedSite}
+                        onSelectSite={handleSelectSite}
                         sunAzDeg={siteData?.time_series?.sun_az_deg?.[0] ?? 0}
                         siteData={siteData}
                         onSwitchToGlobe={() => setView3DMode('globe')}
@@ -342,148 +483,188 @@ export default function App() {
           )}
 
           {/* WINDOW 2: Dedicated Sun & Earth Celestial Simulator */}
-          {activeWindow === 'celestial' && selectedSite && (
-            <div style={{ flex: 1, height: '100%', position: 'relative' }}>
-              <CelestialSimulator
-                site={selectedSite}
-                siteData={siteData}
-                onBack={() => setActiveWindow('explorer')}
+          {activeWindow === 'celestial' && (
+            selectedSite ? (
+              <div style={{ flex: 1, height: '100%', position: 'relative' }}>
+                <CelestialSimulator
+                  site={selectedSite}
+                  siteData={siteData}
+                  onBack={() => setActiveWindow('explorer')}
+                />
+              </div>
+            ) : (
+              <WorkspaceNoSiteState
+                title="Sun & Earth Celestial Simulator"
+                description="Select a candidate lunar site to simulate its real-time solar elevation and direct-to-Earth libration paths."
+                onReturnToExplorer={() => setActiveWindow('explorer')}
+                sites={sites}
+                onSelectSite={handleSelectSite}
               />
-            </div>
+            )
           )}
 
           {/* WINDOW 3: 360° Horizon Skyline */}
-          {activeWindow === 'horizon' && selectedSite && (
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', background: 'var(--color-bg)', overflow: 'hidden' }}>
-              <div style={{
-                padding: '12px 20px',
-                background: 'var(--color-surface)',
-                borderBottom: '1px solid var(--color-border)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexShrink: 0,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {activeWindow === 'horizon' && (
+            selectedSite ? (
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', background: 'var(--color-bg)', overflow: 'hidden' }}>
+                <div style={{
+                  padding: '12px 20px',
+                  background: 'var(--color-surface)',
+                  borderBottom: '1px solid var(--color-border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexShrink: 0,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <button onClick={() => setActiveWindow('explorer')} className="btn btn-secondary" style={{ padding: '5px 10px', fontSize: '12px' }}>
+                      <ChevronLeft size={14} />
+                      <span>Back to Explorer</span>
+                    </button>
+                    <div>
+                      <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        360° Panoramic Horizon Skyline · {selectedSite.name}
+                      </h2>
+                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                        LOLA DTM topographic silhouette with real-time Sun & Earth libration path intersection.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <HorizonSkyline
+                    siteData={siteData}
+                    site={selectedSite}
+                    currentStep={skylineStep}
+                  />
+
+                  {/* Scrubber Card */}
+                  <div style={{
+                    background: 'var(--color-panel)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-lg)',
+                    padding: '16px 20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
+                        Time Scrubber — Animate Celestial Motion
+                      </span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--color-cyan)' }}>
+                        UTC: {siteData?.time_series?.times_utc?.[skylineStep]?.slice(0, 16).replace('T', ' ') || '—'}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>Apr 01</span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={(siteData?.time_series?.times_utc?.length || 1) - 1}
+                        value={skylineStep}
+                        onChange={e => setSkylineStep(Number(e.target.value))}
+                      />
+                      <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>May 01</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <WorkspaceNoSiteState
+                title="360° Panoramic Horizon Skyline"
+                description="Select a candidate lunar site to generate its LOLA topographic silhouette and solar occultation profile."
+                onReturnToExplorer={() => setActiveWindow('explorer')}
+                sites={sites}
+                onSelectSite={handleSelectSite}
+              />
+            )
+          )}
+
+          {/* WINDOW 4: Illumination Timeline Panel */}
+          {activeWindow === 'timeline' && (
+            selectedSite ? (
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', background: 'var(--color-bg)', overflow: 'hidden' }}>
+                <div style={{
+                  padding: '12px 20px',
+                  background: 'var(--color-surface)',
+                  borderBottom: '1px solid var(--color-border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  flexShrink: 0,
+                }}>
                   <button onClick={() => setActiveWindow('explorer')} className="btn btn-secondary" style={{ padding: '5px 10px', fontSize: '12px' }}>
                     <ChevronLeft size={14} />
                     <span>Back to Explorer</span>
                   </button>
                   <div>
                     <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      360° Panoramic Horizon Skyline · {selectedSite.name}
+                      Illumination & Earth Visibility Timeline · {selectedSite.name}
                     </h2>
                     <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      LOLA DTM topographic silhouette with real-time Sun & Earth libration path intersection.
+                      720-hour study interval with sub-second bisection for eclipse transitions.
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <HorizonSkyline
-                  siteData={siteData}
-                  site={selectedSite}
-                  currentStep={skylineStep}
-                />
-
-                {/* Scrubber Card */}
-                <div style={{
-                  background: 'var(--color-panel)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: 'var(--radius-lg)',
-                  padding: '16px 20px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
-                      Time Scrubber — Animate Celestial Motion
-                    </span>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--color-cyan)' }}>
-                      UTC: {siteData?.time_series?.times_utc?.[skylineStep]?.slice(0, 16).replace('T', ' ') || '—'}
-                    </span>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>Apr 01</span>
-                    <input
-                      type="range"
-                      min={0}
-                      max={(siteData?.time_series?.times_utc?.length || 1) - 1}
-                      value={skylineStep}
-                      onChange={e => setSkylineStep(Number(e.target.value))}
-                    />
-                    <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>May 01</span>
-                  </div>
+                <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
+                  <TimelinePanel siteData={siteData} site={selectedSite} />
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* WINDOW 4: Illumination Timeline Panel */}
-          {activeWindow === 'timeline' && selectedSite && (
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', background: 'var(--color-bg)', overflow: 'hidden' }}>
-              <div style={{
-                padding: '12px 20px',
-                background: 'var(--color-surface)',
-                borderBottom: '1px solid var(--color-border)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                flexShrink: 0,
-              }}>
-                <button onClick={() => setActiveWindow('explorer')} className="btn btn-secondary" style={{ padding: '5px 10px', fontSize: '12px' }}>
-                  <ChevronLeft size={14} />
-                  <span>Back to Explorer</span>
-                </button>
-                <div>
-                  <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                    Illumination & Earth Visibility Timeline · {selectedSite.name}
-                  </h2>
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                    720-hour study interval with sub-second bisection for eclipse transitions.
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
-                <TimelinePanel siteData={siteData} site={selectedSite} />
-              </div>
-            </div>
+            ) : (
+              <WorkspaceNoSiteState
+                title="Illumination & Earth Visibility Timeline"
+                description="Select a candidate lunar site to analyze its 720-hour light and communications timeline."
+                onReturnToExplorer={() => setActiveWindow('explorer')}
+                sites={sites}
+                onSelectSite={handleSelectSite}
+              />
+            )
           )}
 
           {/* WINDOW 5: Lander Battery Simulation Lab */}
-          {activeWindow === 'energy' && selectedSite && (
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', background: 'var(--color-bg)', overflow: 'hidden' }}>
-              <div style={{
-                padding: '12px 20px',
-                background: 'var(--color-surface)',
-                borderBottom: '1px solid var(--color-border)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                flexShrink: 0,
-              }}>
-                <button onClick={() => setActiveWindow('explorer')} className="btn btn-secondary" style={{ padding: '5px 10px', fontSize: '12px' }}>
-                  <ChevronLeft size={14} />
-                  <span>Back to Explorer</span>
-                </button>
-                <div>
-                  <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                    Lander Power & Battery Simulation Lab · {selectedSite.name}
-                  </h2>
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                    2.5 m² solar array, 1,200 Wh battery capacity, 65 W nominal load, 20% reserve floor.
+          {activeWindow === 'energy' && (
+            selectedSite ? (
+              <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', background: 'var(--color-bg)', overflow: 'hidden' }}>
+                <div style={{
+                  padding: '12px 20px',
+                  background: 'var(--color-surface)',
+                  borderBottom: '1px solid var(--color-border)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  flexShrink: 0,
+                }}>
+                  <button onClick={() => setActiveWindow('explorer')} className="btn btn-secondary" style={{ padding: '5px 10px', fontSize: '12px' }}>
+                    <ChevronLeft size={14} />
+                    <span>Back to Explorer</span>
+                  </button>
+                  <div>
+                    <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      Lander Power & Battery Simulation Lab · {selectedSite.name}
+                    </h2>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      2.5 m² solar array, 1,200 Wh battery capacity, 65 W nominal load, 20% reserve floor.
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
-                <EnergyPanel siteData={siteData} site={selectedSite} />
+                <div style={{ flex: 1, padding: '20px', overflowY: 'auto' }}>
+                  <EnergyPanel siteData={siteData} site={selectedSite} />
+                </div>
               </div>
-            </div>
+            ) : (
+              <WorkspaceNoSiteState
+                title="Lander Power & Battery Simulation Lab"
+                description="Select a candidate lunar site to evaluate solar generation and battery state-of-charge over the study period."
+                onReturnToExplorer={() => setActiveWindow('explorer')}
+                sites={sites}
+                onSelectSite={handleSelectSite}
+              />
+            )
           )}
 
           {/* WINDOW 6: NASA Cross-Check Matrix */}
